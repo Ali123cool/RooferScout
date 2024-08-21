@@ -11,8 +11,13 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
-  
+      uses: actions/checkout@v3  # Updated to the latest version
+
+    - name: Show current directory
+      run: pwd  # This will print the current working directory
+
+    - name: List files in repository
+      run: ls -R  # This will list all files and directories recursively
 
     - name: Identify changed files
       id: changed_files
@@ -27,7 +32,9 @@ jobs:
         while read file; do
           if [ -f "Webflow-CustomCode/$file" ]; then
             echo "Uploading Webflow-CustomCode/$file to BunnyCDN"
-            # Ensure the directory structure is preserveds
+            # Ensure the directory structure is preserved
             curl -v --ftp-pasv -T "Webflow-CustomCode/$file" ftp://rooferscout-storagezone:${{ secrets.BUNNY_PASSWORD }}@la.storage.bunnycdn.com/${file} || exit 1;
+          else
+            echo "File not found: Webflow-CustomCode/$file"
           fi
         done < changed_files.txt
