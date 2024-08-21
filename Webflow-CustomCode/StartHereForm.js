@@ -73,26 +73,6 @@ async function calculatePriceRange() {
   console.log('Quote ID:', quoteId);
 }
 
-// Function to submit the form data to Supabase
-async function submitForm() {
-  const formData = new FormData(document.getElementById('roofing-form'));
-  const data = {};
-
-  formData.forEach((value, key) => {
-    data[key] = value;
-  });
-
-  const { error } = await supabase
-    .from('your_table_name') // Replace with your Supabase table name
-    .insert([data]);
-
-  if (error) {
-    console.error('Error submitting form data:', error);
-  } else {
-    console.log('Form data submitted successfully.');
-  }
-}
-
 // Utility function to generate a random string of the specified length
 function generateRandomString(length) {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
