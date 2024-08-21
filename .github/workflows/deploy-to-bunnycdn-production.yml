@@ -13,9 +13,22 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Upload new files to Production folder on BunnyCDN
+    - name: Upload new files to Production folder on BunnyCDN using HTTP API
       run: |
         for file in $(find ./Webflow-CustomCode/ -type f); do
-          echo "Uploading $file to BunnyCDN"
-          curl -v --ftp-pasv -T "$file" ftp://rooferscout-storagezone:${{ secrets.BUNNY_PASSWORD }}@la.storage.bunnycdn.com/Production/${file#./Webflow-CustomCode/} || exit 1;
+          echo "Uploading $file to BunnyCDN with Cache-Control header"
+          curl -X PUT \
+            --url "https://storage.bunnycdn.com/rooferscout-storagezone/Production/${file#./Webflow-CustomCode/}" \
+            --header "AccessKey: ${{ secrets.BUNNY_PASSWORD }}" \
+            --header "Cache-Control: no-cache, no-store, must-revalidate" \
+            --header "Content-Type: application/octet-stream" \
+            --upload-file "$file" || exit 1;
         done
+
+    - name: Purge BunnyCDN Cache
+      run: |
+        curl -X POST \
+          --url "https://bunnycdn.com/api/purge" \
+          --header "AccessKey: ${{ secrets.BUNNY_PASSWORD }}" \
+          --header "Content-Type: application/json" \
+          --data '{"url": "https://RooferScout-PullZone.b-cdn.net/Production"}'
