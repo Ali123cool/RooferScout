@@ -1,4 +1,4 @@
-name: Deploy to BunnyCDN
+name: Deploy Changed Files to BunnyCDN
 
 on:
   push:
@@ -13,9 +13,20 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Upload all files to BunnyCDN
+    - name: Identify changed files
+      id: changed_files
       run: |
-        for file in $(find ./Html-For-Webflow/ -type f); do
-          echo "Uploading $file"
-          curl -v --ftp-pasv -T $file ftp://rooferscout-storagezone:${{ secrets.BUNNY_PASSWORD }}@la.storage.bunnycdn.com/${file#./Html-For-Webflow/} || exit 1;
-        done
+        echo "Determining which files have changed..."
+        git diff --name-only HEAD^ HEAD --relative=Webflow-CustomCode/ > changed_files.txt
+        echo "Changed files:"
+        cat changed_files.txt
+
+    - name: Upload changed files to BunnyCDN with directory structure
+      run: |
+        while read file; do
+          if [ -f "Webflow-CustomCode/$file" ]; then
+            echo "Uploading Webflow-CustomCode/$file to BunnyCDN"
+            # Ensure the directory structure is preserved
+            curl -v --ftp-pasv -T "Webflow-CustomCode/$file" ftp://rooferscout-storagezone:${{ secrets.BUNNY_PASSWORD }}@la.storage.bunnycdn.com/${file} || exit 1;
+          fi
+        done < changed_files.txt
