@@ -13,9 +13,23 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
+    - name: List files in directory
+      run: |
+        echo "Listing files in Html-For-Webflow directory"
+        ls -R ./Html-For-Webflow/
+
+    - name: Delete existing files from BunnyCDN
+      run: |
+        for file in $(find ./Html-For-Webflow/ -type f); do
+          echo "Deleting ${file#./Html-For-Webflow/} from BunnyCDN"
+          curl -v --ftp-pasv -Q "-DELE ${file#./Html-For-Webflow/}" ftp://rooferscout-storagezone:${{ secrets.BUNNY_PASSWORD }}@la.storage.bunnycdn.com/ || exit 1;
+        done
+
     - name: Upload all files to BunnyCDN
       run: |
         for file in $(find ./Html-For-Webflow/ -type f); do
-          echo "Uploading $file"
+          echo "Uploading $file to BunnyCDN"
           curl -v --ftp-pasv -T $file ftp://rooferscout-storagezone:${{ secrets.BUNNY_PASSWORD }}@la.storage.bunnycdn.com/${file#./Html-For-Webflow/} || exit 1;
         done
+
+
