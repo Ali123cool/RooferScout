@@ -25,11 +25,4 @@ jobs:
             --upload-file "$file" || exit 1;
         done
 
-    - name: Purge BunnyCDN Cache
-      run: |
-        curl -X POST \
-          --url "https://bunnycdn.net/api/purge" \
-          --header "AccessKey: ${{ secrets.BUNNY_PASSWORD }}" \
-          --header "Content-Type: application/json" \
-          --data '{"url": "https://RooferScout-PullZone.b-cdn.net/Production"}'
       
