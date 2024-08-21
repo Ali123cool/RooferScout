@@ -13,9 +13,22 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Delete existing files in Production folder on BunnyCDN
+    - name: Check for existing files in Production folder on BunnyCDN
       run: |
-        curl -v --ftp-pasv -Q "DELE /Production/*" ftp://rooferscout-storagezone:${{ secrets.BUNNY_PASSWORD }}@la.storage.bunnycdn.com/ || exit 1;
+        # List all files and directories under /Production/
+        curl -v --ftp-pasv ftp://rooferscout-storagezone:${{ secrets.BUNNY_PASSWORD }}@la.storage.bunnycdn.com/Production/ -Q "MLSD" > file_list.txt
+        
+        # Check if file_list.txt is empty
+        if [ -s file_list.txt ]; then
+          echo "Files found, proceeding to delete..."
+          # Extract only the file and directory names and delete them
+          grep -Eo ' [^ ]+$' file_list.txt | while read file; do
+            echo "Deleting $file from Production"
+            curl -v --ftp-pasv -Q "DELE Production/$file" ftp://rooferscout-storagezone:${{ secrets.BUNNY_PASSWORD }}@la.storage.bunnycdn.com/ || echo "Failed to delete $file"
+          done
+        else
+          echo "No files found, skipping deletion."
+        fi
 
     - name: Upload new files to Production folder on BunnyCDN
       run: |
