@@ -1,9 +1,13 @@
 // Load Supabase library
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+
 document.addEventListener('DOMContentLoaded', function() {
+    
+    // Create a single Supabase client for interacting with your database
     const supabaseUrl = 'https://wcpcigdzqcmxvzfpbazr.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndjcGNpZ2R6cWNteHZ6ZnBiYXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjQxODIzMDAsImV4cCI6MjAzOTc1ODMwMH0.0AtbcXKmjDZY-HSu235YDWY5qCyd0JQTwWxtv2MWX5A';
-    const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
-  
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
     // Event listener for the Calculate button
     document.getElementById('calculate-button').addEventListener('click', function() {
       calculatePriceRange(supabaseClient);
