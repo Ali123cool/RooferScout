@@ -19,7 +19,7 @@ jobs:
           echo "Uploading $file to BunnyCDN with Cache-Control header"
           curl -X PUT \
             --url "https://la.storage.bunnycdn.com/rooferscout-storagezone/Production/${file#./Webflow-CustomCode/}" \
-            --header "AccessKey: ${{ secrets.BUNNY_API_KEY }}" \
+            --header "AccessKey: ${{ secrets.BUNNY_API_KEY_STORAGE }}" \
             --header "Cache-Control: no-cache, no-store, must-revalidate" \
             --header "Content-Type: application/octet-stream" \
             --upload-file "$file" || exit 1;
