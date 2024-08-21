@@ -16,5 +16,6 @@ jobs:
     - name: Upload all files to BunnyCDN
       run: |
         for file in $(find ./Html-For-Webflow/ -type f); do
-          curl -T $file ftp://la.storage.bunnycdn.com/${file#./Html-For-Webflow/} --user rooferscout-storagezone:${{ secrets.BUNNY_PASSWORD }};
+          echo "Uploading $file"
+          curl -v --ftp-pasv -T $file ftp://rooferscout-storagezone:${{ secrets.BUNNY_PASSWORD }}@la.storage.bunnycdn.com/${file#./Html-For-Webflow/} || exit 1;
         done
