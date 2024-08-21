@@ -1,9 +1,9 @@
-name: Deploy to Development
+name: Deploy to Production
 
 on:
   push:
     branches:
-      - Development  # Trigger the workflow on pushes to the Development branch
+      - main  # Trigger the workflow on pushes to the main branch
 
 jobs:
   deploy:
@@ -13,26 +13,13 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Check for existing files in Development folder on BunnyCDN
-      run: |
-        # List all files and directories under /Development/
-        curl -v --ftp-pasv ftp://rooferscout-storagezone:${{ secrets.BUNNY_PASSWORD }}@la.storage.bunnycdn.com/Development/ -Q "MLSD" > file_list.txt
-        
-        # Check if file_list.txt is empty
-        if [ -s file_list.txt ]; then
-          echo "Files found, proceeding to delete..."
-          # Extract only the file and directory names and delete them
-          grep -Eo ' [^ ]+$' file_list.txt | while read file; do
-            echo "Deleting $file from Development"
-            curl -v --ftp-pasv -Q "DELE Development/$file" ftp://rooferscout-storagezone:${{ secrets.BUNNY_PASSWORD }}@la.storage.bunnycdn.com/ || echo "Failed to delete $file"
-          done
-        else
-          echo "No files found, skipping deletion."
-        fi
-
-    - name: Upload new files to Development folder on BunnyCDN
+    - name: Upload new files to Production folder on BunnyCDN using HTTP API
       run: |
         for file in $(find ./Webflow-CustomCode/ -type f); do
           echo "Uploading $file to BunnyCDN"
-          curl -v --ftp-pasv -T "$file" ftp://rooferscout-storagezone:${{ secrets.BUNNY_PASSWORD }}@la.storage.bunnycdn.com/Development/${file#./Webflow-CustomCode/} || exit 1;
+          curl -X PUT \
+            --url "https://storage.bunnycdn.com/your_storage_zone/Production/${file#./Webflow-CustomCode/}" \
+            --header "AccessKey: ${{ secrets.BUNNY_API_KEY }}" \
+            --header "Content-Type: application/octet-stream" \
+            --upload-file "$file" || exit 1;
         done
