@@ -31,4 +31,5 @@ jobs:
           --url "https://bunnycdn.net/api/purge" \
           --header "AccessKey: ${{ secrets.BUNNY_PASSWORD }}" \
           --header "Content-Type: application/json" \
-          --data '{"url": "https://api.bunny.net/purge?url=https://RooferScout-PullZone.b-cdn.net/Production&async=false"}'
+          --data '{"url": "https://RooferScout-PullZone.b-cdn.net/Production"}'
+      
