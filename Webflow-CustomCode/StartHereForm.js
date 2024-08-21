@@ -10,7 +10,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 document.getElementById('fetchDataBtn').addEventListener('click', async function() {
     try {
         const { data, error } = await supabase
-            .from('rooferscout_state_costs')
+            .from('rooferscout_state_factors')
             .select('*');
 
         if (error) {
