@@ -3,7 +3,7 @@ name: Deploy to BunnyCDN
 on:
   push:
     branches:
-      - main  # You can specify the branch you want to trigger the deployment
+      - main  # Trigger the workflow on pushes to the main branch
 
 jobs:
   deploy:
@@ -15,4 +15,6 @@ jobs:
 
     - name: Upload all files to BunnyCDN
       run: |
-        find ./path/to/your/files/ -type f -exec curl -T {} ftp://storage.bunnycdn.com/your-storage-zone-name/{} --user ${{ secrets.BUNNY_API_KEY }}: \;
+        for file in $(find ./Html-For-Webflow/ -type f); do
+          curl -T $file ftp://la.storage.bunnycdn.com/${file#./Html-For-Webflow/} --user rooferscout-storagezone:${{ secrets.BUNNY_PASSWORD }};
+        done
