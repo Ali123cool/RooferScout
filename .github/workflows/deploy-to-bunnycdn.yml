@@ -1,0 +1,18 @@
+name: Deploy to BunnyCDN
+
+on:
+  push:
+    branches:
+      - main  # You can change this to any branch you want to monitor
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Upload to BunnyCDN
+      run: |
+        curl -T ./path/to/your/file.js ftp://storage.bunnycdn.com/your-storage-zone-name/your-file.js --user ${{ secrets.BUNNY_API_KEY }}:
