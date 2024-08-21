@@ -1,121 +1,41 @@
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supabase Test</title>
+</head>
+<body>
+    <h1>Supabase Data Fetch Test</h1>
+    <button id="fetchDataBtn">Fetch Data</button>
+    <pre id="output"></pre>
 
-<script>
+    <!-- Include the Supabase library using a module script -->
+<script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+
+    // Create a single Supabase client for interacting with your database
     const supabaseUrl = 'https://wcpcigdzqcmxvzfpbazr.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndjcGNpZ2R6cWNteHZ6ZnBiYXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjQxODIzMDAsImV4cCI6MjAzOTc1ODMwMH0.0AtbcXKmjDZY-HSu235YDWY5qCyd0JQTwWxtv2MWX5A';
-    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
-    console.log("Script is running");
+    document.getElementById('fetchDataBtn').addEventListener('click', async function() {
+        try {
+            const { data, error } = await supabase
+                .from('rooferscout_building_type_factors')
+                .select('*');
 
-    document.getElementById('calculate-button').addEventListener('click', function() {
-        console.log('Calculate button clicked');
-        calculatePriceRange();
-    });
+            if (error) {
+                throw error;
+            }
 
-    function generateUniqueId() {
-        return Array(4).fill(0).map(() => Math.random().toString(36).substr(2, 8)).join('');
-    }
-
-    async function fetchTableData(tableName) {
-        const { data, error } = await supabase
-            .from(tableName)
-            .select('*');
-        if (error) {
-            console.error(`Error fetching ${tableName}:`, error);
-            return null;
+            // Display the data as a JSON string with proper formatting
+            document.getElementById('output').textContent = JSON.stringify(data, null, 2);
+        } catch (error) {
+            document.getElementById('output').textContent = `Error: ${error.message}`;
         }
-        return data;
-    }
-
-    async function calculatePriceRange() {
-        const materialCosts = await fetchMaterialCosts();
-        const stateFactors = await fetchStateFactors();
-        const serviceTypeFactors = await fetchServiceTypeFactors();
-        const steepnessCosts = await fetchSteepnessCosts();
-        const storiesCosts = await fetchStoriesCosts();
-        const buildingTypeFactors = await fetchBuildingTypeFactors();
-
-        // Retrieve and process values directly from the DOM
-        const squareFootage = parseFloat(document.getElementById('Estimated-Roof-Sq-Ft').value);
-        const material = document.getElementById('Desired-Material-Type').value;
-        const serviceType = document.getElementById('Type-Of-Service-Desired').value;
-        const state = document.getElementById('State').value;
-        const stories = document.getElementById('Stories').value;
-        const buildingType = document.getElementById('Building-Type').value;
-        const steepness = document.querySelector('input[name="Roof-Steepness"]:checked').value;
-
-        // Log the retrieved values for debugging
-        console.log('Square Footage:', squareFootage);
-        console.log('Material:', material);
-        console.log('Service Type:', serviceType);
-        console.log('State:', state);
-        console.log('Stories:', stories);
-        console.log('Building Type:', buildingType);
-        console.log('Steepness:', steepness);
-
-        // Ensure `storiesCost` is properly assigned
-        let storiesCost = storiesCosts.find(cost => cost.stories_count == stories)?.cost || 0.050;
-
-        // Calculate the minimum and maximum price
-        const materialMinCost = materialCosts.find(cost => cost.material_name === material)?.min_cost || 0;
-        const materialMaxCost = materialCosts.find(cost => cost.material_name === material)?.max_cost || 0;
-        const serviceTypeValue = serviceTypeFactors.find(factor => factor.service_type === serviceType)?.factor || 1;
-        const stateValue = stateFactors.find(factor => factor.state_name === state)?.factor || 1;
-        const buildingTypeValue = buildingTypeFactors.find(factor => factor.building_type === buildingType)?.factor || 1;
-        const steepnessCost = steepnessCosts.find(cost => cost.steepness_level === steepness)?.cost || 0;
-
-        // Generate random multipliers for dynamic calculation
-        const randomMultiplierMin = Math.random() * (1.01 - 0.998) + 0.99;
-        const randomMultiplierMax = Math.random() * (1.01 - 0.998) + 0.99;
-
-        // Perform the calculations
-        const minPrice = Math.round(squareFootage * ((materialMinCost * serviceTypeValue * stateValue * buildingTypeValue) + storiesCost + steepnessCost) * randomMultiplierMin);
-        const maxPrice = Math.round(squareFootage * ((materialMaxCost * serviceTypeValue * stateValue * buildingTypeValue) + storiesCost + steepnessCost) * randomMultiplierMax);
-
-        // Log the final calculated prices for debugging
-        console.log('Min Price:', minPrice.toFixed(0));
-        console.log('Max Price:', maxPrice.toFixed(0));
-
-        // Update the price range on the page
-        document.getElementById('min-price').innerText = `${minPrice.toFixed(0)}`;
-        document.getElementById('max-price').innerText = `${maxPrice.toFixed(0)}`;
-
-        // Generate a unique identifier for the quote
-        const quoteId = generateUniqueId();
-
-        // Populate hidden fields with the identifier and prices
-        document.getElementById('quote-id').value = quoteId;
-        document.getElementById('min-price-field').value = minPrice;
-        document.getElementById('max-price-field').value = maxPrice;
-    }
-
-    async function fetchMaterialCosts() {
-        const data = await fetchTableData('RooferScout_Material_Costs');
-        return data || [];
-    }
-
-    async function fetchStateFactors() {
-        const data = await fetchTableData('RooferScout_State_Factors');
-        return data || [];
-    }
-
-    async function fetchServiceTypeFactors() {
-        const data = await fetchTableData('RooferScout_Service_Type_Factors');
-        return data || [];
-    }
-
-    async function fetchSteepnessCosts() {
-        const data = await fetchTableData('RooferScout_Steepness_Costs');
-        return data || [];
-    }
-
-    async function fetchStoriesCosts() {
-        const data = await fetchTableData('RooferScout_Stories_Costs');
-        return data || [];
-    }
-
-    async function fetchBuildingTypeFactors() {
-        const data = await fetchTableData('RooferScout_Building_Type_Factors');
-        return data || [];
-    }
+    });
 </script>
+
+</body>
+</html>
