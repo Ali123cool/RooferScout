@@ -27,8 +27,6 @@ jobs:
 
     - name: Purge BunnyCDN Cache
       run: |
-        curl -X POST \
-          --url "https://bunnycdn.com/api/purge" \
-          --header "AccessKey: ${{ secrets.BUNNY_PASSWORD }}" \
-          --header "Content-Type: application/json" \
-          --data '{"url": "https://RooferScout-PullZone.b-cdn.net/Production"}'
+        curl --request POST \
+          --url 'https://api.bunny.net/purge?url=https://RooferScout-PullZone.b-cdn.net/Production&async=false' \
+          --header "AccessKey: ${{ secrets.BUNNY_PASSWORD }}"
