@@ -32,4 +32,3 @@ jobs:
           --header "AccessKey: ${{ secrets.BUNNY_PASSWORD }}" \
           --header "Content-Type: application/json" \
           --data '{"url": "https://RooferScout-PullZone.b-cdn.net/Production"}'
-https://RooferScout-PullZone.b-cdn.net/Production/StartHereForm%20(1).js
