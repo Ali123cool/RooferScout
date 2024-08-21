@@ -23,7 +23,12 @@ jobs:
       id: changed_files
       run: |
         echo "Determining which files have changed..."
-        git diff --name-only HEAD^ HEAD --relative=Webflow-CustomCode/ > changed_files.txt
+        if git rev-parse --verify HEAD^ >/dev/null 2>&1; then
+          git diff --name-only HEAD^ HEAD --relative=Webflow-CustomCode/ > changed_files.txt
+        else
+          echo "No previous commit found, listing all files."
+          git ls-files -- Webflow-CustomCode/ > changed_files.txt
+        fi
         echo "Changed files:"
         cat changed_files.txt
 
