@@ -18,7 +18,7 @@ jobs:
         for file in $(find ./Webflow-CustomCode/ -type f); do
           echo "Uploading $file to BunnyCDN with Cache-Control header"
           curl -X PUT \
-            --url "https://storage.bunnycdn.com/rooferscout-storagezone/Production/${file#./Webflow-CustomCode/}" \
+            --url "https://la.storage.bunnycdn.com/rooferscout-storagezone/Production/${file#./Webflow-CustomCode/}" \
             --header "AccessKey: ${{ secrets.BUNNY_PASSWORD }}" \
             --header "Cache-Control: no-cache, no-store, must-revalidate" \
             --header "Content-Type: application/octet-stream" \
@@ -32,3 +32,4 @@ jobs:
           --header "AccessKey: ${{ secrets.BUNNY_PASSWORD }}" \
           --header "Content-Type: application/json" \
           --data '{"url": "https://RooferScout-PullZone.b-cdn.net/Production"}'
+https://RooferScout-PullZone.b-cdn.net/Production/StartHereForm%20(1).js
