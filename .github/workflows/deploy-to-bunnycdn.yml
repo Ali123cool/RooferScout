@@ -27,7 +27,7 @@ jobs:
         while read file; do
           if [ -f "Webflow-CustomCode/$file" ]; then
             echo "Uploading Webflow-CustomCode/$file to BunnyCDN"
-            # Ensure the directory structure is preserved
+            # Ensure the directory structure is preserveds
             curl -v --ftp-pasv -T "Webflow-CustomCode/$file" ftp://rooferscout-storagezone:${{ secrets.BUNNY_PASSWORD }}@la.storage.bunnycdn.com/${file} || exit 1;
           fi
         done < changed_files.txt
