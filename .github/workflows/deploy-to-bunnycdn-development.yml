@@ -1,0 +1,25 @@
+name: Deploy to Development
+
+on:
+  push:
+    branches:
+      - Development  # Trigger the workflow on pushes to the Development branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Delete existing files in Development folder on BunnyCDN
+      run: |
+        curl -v --ftp-pasv -Q "DELE /Development/*" ftp://rooferscout-storagezone:${{ secrets.BUNNY_PASSWORD }}@la.storage.bunnycdn.com/ || exit 1;
+
+    - name: Upload new files to Development folder on BunnyCDN
+      run: |
+        for file in $(find ./Webflow-CustomCode/ -type f); do
+          echo "Uploading $file to BunnyCDN"
+          curl -v --ftp-pasv -T "$file" ftp://rooferscout-storagezone:${{ secrets.BUNNY_PASSWORD }}@la.storage.bunnycdn.com/Development/${file#./Webflow-CustomCode/} || exit 1;
+        done

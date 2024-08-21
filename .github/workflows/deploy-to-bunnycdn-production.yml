@@ -1,0 +1,25 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main  # Trigger the workflow on pushes to the main branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Delete existing files in Production folder on BunnyCDN
+      run: |
+        curl -v --ftp-pasv -Q "DELE /Production/*" ftp://rooferscout-storagezone:${{ secrets.BUNNY_PASSWORD }}@la.storage.bunnycdn.com/ || exit 1;
+
+    - name: Upload new files to Production folder on BunnyCDN
+      run: |
+        for file in $(find ./Webflow-CustomCode/ -type f); do
+          echo "Uploading $file to BunnyCDN"
+          curl -v --ftp-pasv -T "$file" ftp://rooferscout-storagezone:${{ secrets.BUNNY_PASSWORD }}@la.storage.bunnycdn.com/Production/${file#./Webflow-CustomCode/} || exit 1;
+        done
