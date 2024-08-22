@@ -18,22 +18,25 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('Calculate button clicked.');
 
         try {
-            // Fetch entire Material Cost table
-            const { data: materialData, error: materialError } = await supabase
+            console.log('Attempting to fetch data...');
+            
+            // Attempting a simple data fetch from Supabase
+            const { data, error } = await supabase
                 .from('rooferscout_material_costs')
-                .select('*');  // Select all columns
+                .select('*');
 
-            if (materialError) {
-                throw new Error(`Material Error: ${materialError.message}`);
+            if (error) {
+                console.error('Error fetching data:', error);
+                return;
             }
-            if (materialData && materialData.length > 0) {
-                console.log('Fetched Material Costs:', materialData);
+
+            if (data && data.length > 0) {
+                console.log('Fetched Data:', data);
             } else {
-                console.log('No material data found.');
+                console.log('No data found');
             }
-
         } catch (error) {
-            console.error('Unexpected error:', error);
+            console.error('Unexpected error occurred:', error);
         }
     });
 });
