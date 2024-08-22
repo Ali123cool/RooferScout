@@ -1,5 +1,4 @@
 
-<script type="module">
 document.addEventListener('DOMContentLoaded', () => {
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
@@ -109,4 +108,3 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('calculate-button').addEventListener('click', calculatePriceRange);
 });
-</script>
