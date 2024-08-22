@@ -100,17 +100,80 @@ function generateRandomString(length) {
     return result;
 }
 
+// Function to submit form data to Supabase
+async function submitFormToSupabase() {
+    const formData = {
+        'First-Name': document.getElementById('First-Name').value,
+        'Last-Name': document.getElementById('Last-Name').value,
+        'Business-Name': document.getElementById('Business-Name').value,
+        'Email': document.getElementById('Email').value,
+        'Phone-Number': document.getElementById('Phone-Number').value,
+        'Call-Allowed': document.getElementById('Call-Allowed').checked, // Checkbox
+        'Text-Allowed': document.getElementById('Text-Allowed').checked, // Checkbox
+        'Email-Allowed': document.getElementById('Email-Allowed').checked, // Checkbox
+        'TOS': document.getElementById('TOS').checked, // Checkbox
+        'Priv-Pol': document.getElementById('Priv-Pol').checked, // Checkbox
+        'Street-Address': document.getElementById('Street-Address').value,
+        'Street-Address-2': document.getElementById('Street-Address-2').value,
+        'State': document.getElementById('State').value,
+        'City': document.getElementById('City').value,
+        'Zip-Code': document.getElementById('Zip-Code').value,
+        'Building-Type': document.getElementById('Building-Type').value,
+        'Estimated-Roof-Sq-Ft': document.getElementById('Estimated-Roof-Sq-Ft').value,
+        'Stories': document.getElementById('Stories').value,
+        'Roof-Steepness': document.querySelector('input[name="Roof-Steepness"]:checked').value, // Radio
+        'Type-Of-Service-Desired': document.getElementById('Type-Of-Service-Desired').value,
+        'Current-Material-Type': document.getElementById('Current-Material-Type').value,
+        'Desired-Material-Type': document.getElementById('Desired-Material-Type').value,
+        'Additional-Services': Array.from(document.getElementById('Additional-Services').selectedOptions).map(opt => opt.value), // Multi-select
+        'Specific-Materials': document.getElementById('Specific-Materials').value,
+        'Additional-Information': document.getElementById('Additional-Information').value,
+        'Will-You-Be-Using-Insurance-2': document.getElementById('Will-You-Be-Using-Insurance-2').value,
+        'Insurance-Company-2': document.getElementById('Insurance-Company-2').value,
+        'Policy-Type-2': document.getElementById('Policy-Type-2').value,
+        'Started-Claim-Process-2': document.getElementById('Started-Claim-Process-2').value,
+        'Insurance-Help-2': document.getElementById('Insurance-Help-2').value,
+        'quote-id': document.getElementById('quote-id').value,
+        'min-price-field': document.getElementById('min-price-field').value,
+        'max-price-field': document.getElementById('max-price-field').value
+    };
+
+    try {
+        const { data, error } = await supabase
+            .from('rooferscout_main_form_submission_v1')
+            .insert([formData]);
+
+        if (error) {
+            throw error;
+        }
+        
+        console.log('Form data submitted successfully:', data);
+    } catch (error) {
+        console.error('Error submitting form data:', error);
+    }
+}
+
+// Attach the submit function to the button click event
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM fully loaded, setting up event listener.');
+    console.log('DOM fully loaded, setting up event listeners.');
+
     const calculateButton = document.getElementById('calculate-button');
-    
-    if (!calculateButton) {
+    if (calculateButton) {
+        calculateButton.addEventListener('click', (event) => {
+            event.preventDefault();
+            calculatePrice();
+        });
+    } else {
         console.error('Calculate button not found!');
-        return;
     }
 
-    calculateButton.addEventListener('click', (event) => {
-        event.preventDefault();
-        calculatePrice();
-    });
+    const submitButton = document.getElementById('Submit-Form-to-Supabase');
+    if (submitButton) {
+        submitButton.addEventListener('click', (event) => {
+            event.preventDefault(); // Prevent the default form submission behavior
+            submitFormToSupabase(); // Call the submit function
+        });
+    } else {
+        console.error('Submit button not found!');
+    }
 });
