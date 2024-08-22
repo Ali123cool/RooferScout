@@ -1,212 +1,88 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
 const supabaseUrl = 'https://wcpcigdzqcmxvzfpbazr.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndjcGNpZ2R6cWNteHZ6ZnBiYXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjQxODIzMDAsImV4cCI6MjAzOTc1ODMwMH0.0AtbcXKmjDZY-HSu235YDWY5qCyd0JQTwWxtv2MWX5A';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndjcGNpZ2R6cWNteHZ6ZnBiYXpyIiwicm9zZSI6ImFub24iLCJpYXQiOjE3MjQxODIzMDAsImV4cCI6MjAzOTc1ODMwMH0.0AtbcXKmjDZY-HSu235YDWY5qCyd0JQTwWxtv2MWX5A';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM fully loaded and parsed');
+document.getElementById('calculate-button').addEventListener('click', async () => {
+    // Fetch Material Cost
+    const selectedMaterial = document.getElementById('Desired-Material-Type').value;
+    const materialData = await fetchSupabaseData('rooferscout_material_costs', 'material_name', selectedMaterial, 'min_cost', 'max_cost');
+    if (!materialData) return;
 
-    async function calculatePriceRange(event) {
-        event.preventDefault(); // Prevent default anchor behavior
-        console.log('Calculate button clicked. Starting price range calculation...');
+    // Fetch Service Type Factor
+    const selectedServiceType = document.getElementById('Type-Of-Service-Desired').value;
+    const serviceTypeData = await fetchSupabaseData('rooferscout_service_type_factors', 'service_type', selectedServiceType, 'factor');
+    if (!serviceTypeData) return;
 
-        const material = await getMaterialCost();
-        if (!material) return;
+    // Fetch State Factor
+    const selectedState = document.getElementById('State').value;
+    const stateData = await fetchSupabaseData('rooferscout_state_factors', 'state_name', selectedState, 'factor');
+    if (!stateData) return;
 
-        const serviceType = await getServiceTypeFactor();
-        if (!serviceType) return;
+    // Fetch Stories Cost
+    const selectedStories = document.getElementById('Stories').value;
+    const storiesData = await fetchSupabaseData('rooferscout_stories_costs', 'stories_count', selectedStories, 'cost');
+    if (!storiesData) return;
 
-        const state = await getStateFactor();
-        if (!state) return;
+    // Fetch Building Type Factor
+    const selectedBuildingType = document.getElementById('Building-Type').value;
+    const buildingTypeData = await fetchSupabaseData('rooferscout_building_type_factors', 'building_type', selectedBuildingType, 'factor');
+    if (!buildingTypeData) return;
 
-        const stories = await getStoriesCost();
-        if (!stories) return;
+    // Fetch Roof Square Footage
+    const selectedRoofSqFt = document.getElementById('Estimated-Roof-Sq-Ft').value;
+    const roofSqFtData = await fetchSupabaseData('rooferscout_estimated_roof_sq_ft', 'range_label', selectedRoofSqFt, 'upper_value');
+    if (!roofSqFtData) return;
 
-        const buildingType = await getBuildingTypeFactor();
-        if (!buildingType) return;
+    // Fetch Steepness Cost
+    const selectedSteepness = document.querySelector('input[name="Roof-Steepness"]:checked').value;
+    const steepnessData = await fetchSupabaseData('rooferscout_steepness_costs', 'steepness_level', selectedSteepness, 'cost');
+    if (!steepnessData) return;
 
-        const roofSqFt = await getRoofSqFt();
-        if (!roofSqFt) return;
+    // Calculate Min and Max Price
+    const minPrice = Math.round(roofSqFtData.upper_value * ((materialData.min_cost * serviceTypeData.factor * stateData.factor * buildingTypeData.factor) + storiesData.cost + steepnessData.cost));
+    const maxPrice = Math.round(roofSqFtData.upper_value * ((materialData.max_cost * serviceTypeData.factor * stateData.factor * buildingTypeData.factor) + storiesData.cost + steepnessData.cost));
 
-        const steepness = await getSteepnessCost();
-        if (!steepness) return;
+    // Display Min and Max Price
+    document.getElementById('min-price').innerText = `${minPrice}`;
+    document.getElementById('max-price').innerText = `${maxPrice}`;
 
-        const minPrice = Math.round(roofSqFt.upper_value * ((material.min_cost * serviceType.factor * state.factor * buildingType.factor) + stories.cost + steepness.cost));
-        const maxPrice = Math.round(roofSqFt.upper_value * ((material.max_cost * serviceType.factor * state.factor * buildingType.factor) + stories.cost + steepness.cost));
-
-        console.log('Min Price:', minPrice);
-        console.log('Max Price:', maxPrice);
-
-        document.getElementById('min-price').innerText = `${minPrice}`;
-        document.getElementById('max-price').innerText = `${maxPrice}`;
-
-        document.getElementById('min-price-field').value = minPrice;
-        document.getElementById('max-price-field').value = maxPrice;
-        document.getElementById('quote-id').value = generateRandomString(32);
-    }
-
-    async function getMaterialCost() {
-        console.log('Fetching material cost...');
-        const element = document.getElementById('Desired-Material-Type');
-        const value = element.value;
-        try {
-            const { data, error } = await supabase
-                .from('rooferscout_material_costs')
-                .select('*')
-                .eq('material_name', value);
-            if (error || !data || !data.length) {
-                console.error('Failed to fetch material costs', error);
-                return null;
-            }
-            console.log('Material Cost:', data[0]);
-            return data[0];
-        } catch (error) {
-            console.error('Error fetching material cost:', error);
-            return null;
-        }
-    }
-
-    async function getServiceTypeFactor() {
-        console.log('Fetching service type factor...');
-        const element = document.getElementById('Type-Of-Service-Desired');
-        const value = element.value;
-        try {
-            const { data, error } = await supabase
-                .from('rooferscout_service_type_factors')
-                .select('*')
-                .eq('service_type', value);
-            if (error || !data || !data.length) {
-                console.error('Failed to fetch service type factor', error);
-                return null;
-            }
-            console.log('Service Type Factor:', data[0]);
-            return data[0];
-        } catch (error) {
-            console.error('Error fetching service type factor:', error);
-            return null;
-        }
-    }
-
-    async function getStateFactor() {
-        console.log('Fetching state factor...');
-        const element = document.getElementById('State');
-        const value = element.value;
-        try {
-            const { data, error } = await supabase
-                .from('rooferscout_state_factors')
-                .select('*')
-                .eq('state_name', value);
-            if (error || !data || !data.length) {
-                console.error('Failed to fetch state factor', error);
-                return null;
-            }
-            console.log('State Factor:', data[0]);
-            return data[0];
-        } catch (error) {
-            console.error('Error fetching state factor:', error);
-            return null;
-        }
-    }
-
-    async function getStoriesCost() {
-        console.log('Fetching stories cost...');
-        const element = document.getElementById('Stories');
-        const value = element.value;
-        try {
-            const { data, error } = await supabase
-                .from('rooferscout_stories_costs')
-                .select('*')
-                .eq('stories_count', value);
-            if (error || !data || !data.length) {
-                console.error('Failed to fetch stories cost', error);
-                return null;
-            }
-            console.log('Stories Cost:', data[0]);
-            return data[0];
-        } catch (error) {
-            console.error('Error fetching stories cost:', error);
-            return null;
-        }
-    }
-
-    async function getBuildingTypeFactor() {
-        console.log('Fetching building type factor...');
-        const element = document.getElementById('Building-Type');
-        const value = element.value;
-        try {
-            const { data, error } = await supabase
-                .from('rooferscout_building_type_factors')
-                .select('*')
-                .eq('building_type', value);
-            if (error || !data || !data.length) {
-                console.error('Failed to fetch building type factor', error);
-                return null;
-            }
-            console.log('Building Type Factor:', data[0]);
-            return data[0];
-        } catch (error) {
-            console.error('Error fetching building type factor:', error);
-            return null;
-        }
-    }
-
-    async function getRoofSqFt() {
-        console.log('Fetching roof square footage...');
-        const element = document.getElementById('Estimated-Roof-Sq-Ft');
-        const value = element.value;
-        try {
-            const { data, error } = await supabase
-                .from('rooferscout_estimated_roof_sq_ft')
-                .select('*')
-                .eq('range_label', value);
-            if (error || !data || !data.length) {
-                console.error('Failed to fetch roof square footage', error);
-                return null;
-            }
-            console.log('Roof Sq Ft:', data[0]);
-            return data[0];
-        } catch (error) {
-            console.error('Error fetching roof square footage:', error);
-            return null;
-        }
-    }
-
-    async function getSteepnessCost() {
-        console.log('Fetching steepness cost...');
-        const element = document.querySelector('input[name="Roof-Steepness"]:checked');
-        const value = element.value;
-        try {
-            const { data, error } = await supabase
-                .from('rooferscout_steepness_costs')
-                .select('*')
-                .eq('steepness_level', value);
-            if (error || !data || !data.length) {
-                console.error('Failed to fetch steepness cost', error);
-                return null;
-            }
-            console.log('Steepness Cost:', data[0]);
-            return data[0];
-        } catch (error) {
-            console.error('Error fetching steepness cost:', error);
-            return null;
-        }
-    }
-
-    function generateRandomString(length) {
-        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-        let result = '';
-        for (let i = 0; i < length; i++) {
-            result += characters.charAt(Math.floor(Math.random() * characters.length));
-        }
-        return result;
-    }
-
-    const calculateButton = document.getElementById('calculate-button');
-    if (calculateButton) {
-        console.log('Calculate button found. Adding event listener.');
-        calculateButton.addEventListener('click', calculatePriceRange);
-    } else {
-        console.error('Calculate button not found in DOM');
-    }
+    // Store the values in hidden fields (if needed for submission)
+    document.getElementById('min-price-field').value = minPrice;
+    document.getElementById('max-price-field').value = maxPrice;
+    document.getElementById('quote-id').value = generateRandomString(32);
 });
+
+// Function to fetch data from Supabase
+async function fetchSupabaseData(tableName, keyColumn, keyValue, ...valueColumns) {
+    const { data, error } = await supabase
+        .from(tableName)
+        .select(valueColumns.join(', '))
+        .eq(keyColumn, keyValue);
+
+    if (error) {
+        console.error(`Error fetching data from ${tableName}:`, error);
+        document.getElementById('result').innerText = 'Error fetching data';
+        return null;
+    }
+
+    if (data && data.length > 0) {
+        console.log(`Fetched data from ${tableName}:`, data[0]);
+        return data[0];
+    } else {
+        console.error(`No data found for ${keyColumn} = ${keyValue}`);
+        document.getElementById('result').innerText = 'No data found';
+        return null;
+    }
+}
+
+// Utility function to generate a random string
+function generateRandomString(length) {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+    for (let i = 0; i < length; i++) {
+        result += characters.charAt(Math.floor(Math.random() * characters.length));
+    }
+    return result;
+}
