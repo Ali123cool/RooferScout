@@ -22,41 +22,84 @@ async function calculatePriceRange() {
     }
 
     // Fetch necessary data from Supabase for each variable
-    const materialCosts = await fetchSupabaseData('rooferscout_material_costs');
-    if (!materialCosts) return;
-    
-    const stateFactors = await fetchSupabaseData('rooferscout_state_factors');
-    if (!stateFactors) return;
-    
-    const serviceTypeFactors = await fetchSupabaseData('rooferscout_service_type_factors');
-    if (!serviceTypeFactors) return;
-    
-    const steepnessCosts = await fetchSupabaseData('rooferscout_steepness_costs');
-    if (!steepnessCosts) return;
-    
-    const storiesCosts = await fetchSupabaseData('rooferscout_stories_costs');
-    if (!storiesCosts) return;
-    
-    const buildingTypeFactors = await fetchSupabaseData('rooferscout_building_type_factors');
-    if (!buildingTypeFactors) return;
-    
-    const estimatedRoofSqFt = await fetchSupabaseData('rooferscout_estimated_roof_sq_ft');
-    if (!estimatedRoofSqFt) return;
+    const { data: materialCosts, error: materialError } = await supabase
+        .from('rooferscout_material_costs')
+        .select('*')
+        .eq('material_name', material);
 
-    // Find specific values for the selected options
-    const selectedMaterialCost = materialCosts.find(item => item.material_name === material);
-    const selectedStateFactor = stateFactors.find(item => item.state_name === state);
-    const selectedServiceTypeFactor = serviceTypeFactors.find(item => item.service_type === serviceType);
-    const selectedSteepnessCost = steepnessCosts.find(item => item.steepness_level === steepness);
-    const selectedStoriesCost = storiesCosts.find(item => item.stories_count === stories);
-    const selectedBuildingTypeFactor = buildingTypeFactors.find(item => item.building_type === buildingType);
-    const selectedRoofSqFt = estimatedRoofSqFt.find(item => item.range_label === roofSqFtRange);
-
-    // Check if any of the selected options are not found
-    if (!selectedMaterialCost || !selectedStateFactor || !selectedServiceTypeFactor || !selectedSteepnessCost || !selectedStoriesCost || !selectedBuildingTypeFactor || !selectedRoofSqFt) {
-        console.error('Some required data is missing.');
+    if (materialError || !materialCosts.length) {
+        console.error('Failed to fetch material costs or no data found.');
         return;
     }
+
+    const { data: stateFactors, error: stateError } = await supabase
+        .from('rooferscout_state_factors')
+        .select('*')
+        .eq('state_name', state);
+
+    if (stateError || !stateFactors.length) {
+        console.error('Failed to fetch state factors or no data found.');
+        return;
+    }
+
+    const { data: serviceTypeFactors, error: serviceTypeError } = await supabase
+        .from('rooferscout_service_type_factors')
+        .select('*')
+        .eq('service_type', serviceType);
+
+    if (serviceTypeError || !serviceTypeFactors.length) {
+        console.error('Failed to fetch service type factors or no data found.');
+        return;
+    }
+
+    const { data: steepnessCosts, error: steepnessError } = await supabase
+        .from('rooferscout_steepness_costs')
+        .select('*')
+        .eq('steepness_level', steepness);
+
+    if (steepnessError || !steepnessCosts.length) {
+        console.error('Failed to fetch steepness costs or no data found.');
+        return;
+    }
+
+    const { data: storiesCosts, error: storiesError } = await supabase
+        .from('rooferscout_stories_costs')
+        .select('*')
+        .eq('stories_count', stories);
+
+    if (storiesError || !storiesCosts.length) {
+        console.error('Failed to fetch stories costs or no data found.');
+        return;
+    }
+
+    const { data: buildingTypeFactors, error: buildingTypeError } = await supabase
+        .from('rooferscout_building_type_factors')
+        .select('*')
+        .eq('building_type', buildingType);
+
+    if (buildingTypeError || !buildingTypeFactors.length) {
+        console.error('Failed to fetch building type factors or no data found.');
+        return;
+    }
+
+    const { data: estimatedRoofSqFt, error: roofSqFtError } = await supabase
+        .from('rooferscout_estimated_roof_sq_ft')
+        .select('*')
+        .eq('range_label', roofSqFtRange);
+
+    if (roofSqFtError || !estimatedRoofSqFt.length) {
+        console.error('Failed to fetch estimated roof sq ft or no data found.');
+        return;
+    }
+
+    // Get the first (and should be only) result from each query
+    const selectedMaterialCost = materialCosts[0];
+    const selectedStateFactor = stateFactors[0];
+    const selectedServiceTypeFactor = serviceTypeFactors[0];
+    const selectedSteepnessCost = steepnessCosts[0];
+    const selectedStoriesCost = storiesCosts[0];
+    const selectedBuildingTypeFactor = buildingTypeFactors[0];
+    const selectedRoofSqFt = estimatedRoofSqFt[0];
 
     // Perform the calculations using the fetched data
     const minPrice = Math.round(selectedRoofSqFt.upper_value * ((selectedMaterialCost.min_cost * selectedServiceTypeFactor.factor * selectedStateFactor.factor * selectedBuildingTypeFactor.factor) + selectedStoriesCost.cost + selectedSteepnessCost.cost));
@@ -73,24 +116,6 @@ async function calculatePriceRange() {
     document.getElementById('min-price-field').value = minPrice;
     document.getElementById('max-price-field').value = maxPrice;
     document.getElementById('quote-id').value = generateRandomString(32);
-}
-
-// Function to fetch data from Supabase
-async function fetchSupabaseData(tableName) {
-    try {
-        const { data, error } = await supabase
-            .from(tableName)
-            .select();
-
-        if (error) {
-            console.error(`Error fetching data from ${tableName}:`, error.message, error.details);
-            return null;
-        }
-        return data;
-    } catch (err) {
-        console.error(`Network error fetching data from ${tableName}:`, err.message, err.stack);
-        return null;
-    }
 }
 
 // Utility function to generate a random string
