@@ -1,21 +1,20 @@
-// supabase-script.js
-
+// Import Supabase client
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
 // Create a single Supabase client for interacting with your database
 const supabaseUrl = 'https://wcpcigdzqcmxvzfpbazr.supabase.co';
-const supabaseKey = 'your_supabase_key_here';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndjcGNpZ2R6cWNteHZ6ZnBiYXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjQxODIzMDAsImV4cCI6MjAzOTc1ODMwMH0.0AtbcXKmjDZY-HSu235YDWY5qCyd0JQTwWxtv2MWX5A';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Event listener for the Calculate button
 document.getElementById('calculate-button').addEventListener('click', function() {
-  calculatePriceRange();
+    calculatePriceRange();
 });
 
 // Event listener for the Submit button
 document.getElementById('roofing-form').addEventListener('submit', function(event) {
-  event.preventDefault(); // Prevent the default form submission
-  submitForm();
+    event.preventDefault(); // Prevent the default form submission
+    submitForm();
 });
 
 // Function to calculate the price range
@@ -72,55 +71,61 @@ async function calculatePriceRange() {
     document.getElementById('max-price-field').value = maxPrice;
     document.getElementById('quote-id').value = quoteId;
 
-    console.log('Min Price:', minPrice);
-    console.log('Max Price:', maxPrice);
+    // Log the final calculated prices for debugging
+    console.log('Min Price:', minPrice.toFixed(0));
+    console.log('Max Price:', maxPrice.toFixed(0));
+
+    // Update the price range on the page
+    document.getElementById('min-price').innerText = `${minPrice.toFixed(0)}`;
+    document.getElementById('max-price').innerText = `${maxPrice.toFixed(0)}`;
+
     console.log('Quote ID:', quoteId);
 }
   
 // Function to submit the form data to Supabase
 async function submitForm() {
-  const formData = new FormData(document.getElementById('roofing-form'));
-  const data = {};
+    const formData = new FormData(document.getElementById('roofing-form'));
+    const data = {};
 
-  formData.forEach((value, key) => {
-    data[key] = value;
-  });
+    formData.forEach((value, key) => {
+        data[key] = value;
+    });
 
-  const { error } = await supabase
-    .from('rooferscout_main_form_submission_v1') // Use the correct table name
-    .insert([data]);
+    const { error } = await supabase
+        .from('rooferscout_main_form_submission_v1') // Use the correct table name
+        .insert([data]);
 
-  if (error) {
-    console.error('Error submitting form data:', error);
-  } else {
-    console.log('Form data submitted successfully.');
-  }
+    if (error) {
+        console.error('Error submitting form data:', error);
+    } else {
+        console.log('Form data submitted successfully.');
+    }
 }
 
 // Utility function to generate a random string of the specified length
 function generateRandomString(length) {
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let result = '';
-  for (let i = 0; i < length; i++) {
-    result += characters.charAt(Math.floor(Math.random() * characters.length));
-  }
-  return result;
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+    for (let i = 0; i < length; i++) {
+        result += characters.charAt(Math.floor(Math.random() * characters.length));
+    }
+    return result;
 }
 
 // Function to fetch data from Supabase
 async function fetchSupabaseData(tableName) {
-  try {
-    const { data, error } = await supabase
-      .from(tableName)
-      .select();
+    try {
+        const { data, error } = await supabase
+            .from(tableName)
+            .select();
 
-    if (error) {
-      console.error(`Error fetching data from ${tableName}:`, error);
-      return null;
+        if (error) {
+            console.error(`Error fetching data from ${tableName}:`, error);
+            return null;
+        }
+        return data;
+    } catch (err) {
+        console.error(`Network error fetching data from ${tableName}:`, err);
+        return null;
     }
-    return data;
-  } catch (err) {
-    console.error(`Network error fetching data from ${tableName}:`, err);
-    return null;
-  }
 }
