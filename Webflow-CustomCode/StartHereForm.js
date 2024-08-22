@@ -133,16 +133,16 @@ function generateRandomString(length) {
 async function fetchSupabaseData(tableName) {
     try {
         const { data, error } = await supabase
-            .from(tableName)
-            .select();
+            .from(tableName) // This ensures the API key is included in the request headers
+            .select('*'); // Adjust this line based on what you need to select
 
         if (error) {
-            console.error(`Error fetching data from ${tableName}:`, error);
+            console.error(`Error fetching data from ${tableName}:`, error.message, error.details);
             return null;
         }
         return data;
     } catch (err) {
-        console.error(`Network error fetching data from ${tableName}:`, err);
+        console.error(`Network error fetching data from ${tableName}:`, err.message, err.stack);
         return null;
     }
 }
