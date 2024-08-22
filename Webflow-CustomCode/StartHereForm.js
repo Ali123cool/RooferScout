@@ -141,39 +141,39 @@ function generateRandomString(length) {
 async function submitFormToSupabase() {
     // Format: 'supabase_column_name': document.getElementById('webflow_html_id').value
     const formData = {
-        'first_name': document.getElementById('First-Name').value,
-        'last_name': document.getElementById('Last-Name').value,
-        'business_name': document.getElementById('Business-Name').value,
-        'email': document.getElementById('Email').value,
-        'phone_number': document.getElementById('Phone-Number').value,
-        'call_allowed': document.getElementById('Call-Allowed').checked,
-        'text_allowed': document.getElementById('Text-Allowed').checked,
-        'email_allowed': document.getElementById('Email-Allowed').checked,
-        'tos': document.getElementById('TOS').checked,
-        'priv_pol': document.getElementById('Priv-Pol').checked,
-        'street_address': document.getElementById('Street-Address').value,
-        'street_address_2': document.getElementById('Street-Address-2').value,
-        'state': document.getElementById('State').value,
-        'city': document.getElementById('City').value,
-        'zip_code': document.getElementById('Zip-Code').value,
-        'building_type': document.getElementById('Building-Type').value,
-        'estimated_roof_sq_ft': document.getElementById('Estimated-Roof-Sq-Ft').value,
-        'stories': document.getElementById('Stories').value,
-        'roof_steepness': document.querySelector('input[name="Roof-Steepness"]:checked').value,
-        'type_of_service_desired': document.getElementById('Type-Of-Service-Desired').value,
-        'current_material_type': document.getElementById('Current-Material-Type').value,
-        'desired_material_type': document.getElementById('Desired-Material-Type').value,
-        'additional_services': Array.from(document.getElementById('Additional-Services').selectedOptions).map(opt => opt.value),
-        'specific_materials': document.getElementById('Specific-Materials').value,
-        'additional_information': document.getElementById('Additional-Information').value,
-        'will_you_be_using_insurance_2': document.getElementById('Will-You-Be-Using-Insurance-2').value,
-        'insurance_company_2': document.getElementById('Insurance-Company-2').value,
-        'policy_type_2': document.getElementById('Policy-Type-2').value,
-        'started_claim_process_2': document.getElementById('Started-Claim-Process-2').value,
-        'insurance_help_2': document.getElementById('Insurance-Help-2').value,
-        'quote_id': document.getElementById('quote-id').value,
-        'min_price_field': document.getElementById('min-price-field').value,
-        'max_price_field': document.getElementById('max-price-field').value
+        'first_name': getValueById('First-Name'),
+        'last_name': getValueById('Last-Name'),
+        'business_name': getValueById('Business-Name'),
+        'email': getValueById('Email'),
+        'phone_number': getValueById('Phone-Number'),
+        'call_allowed': getCheckedById('Call-Allowed'),
+        'text_allowed': getCheckedById('Text-Allowed'),
+        'email_allowed': getCheckedById('Email-Allowed'),
+        'tos': getCheckedById('TOS'),
+        'priv_pol': getCheckedById('Priv-Pol'),
+        'street_address': getValueById('Street-Address'),
+        'street_address_2': getValueById('Street-Address-2'),
+        'state': getValueById('State'),
+        'city': getValueById('City'),
+        'zip_code': getValueById('Zip-Code'),
+        'building_type': getValueById('Building-Type'),
+        'estimated_roof_sq_ft': getValueById('Estimated-Roof-Sq-Ft'),
+        'stories': getValueById('Stories'),
+        'roof_steepness': getRadioValueByName('Roof-Steepness'),
+        'type_of_service_desired': getValueById('Type-Of-Service-Desired'),
+        'current_material_type': getValueById('Current-Material-Type'),
+        'desired_material_type': getValueById('Desired-Material-Type'),
+        'additional_services': getSelectedOptionsById('Additional-Services'),
+        'specific_materials': getValueById('Specific-Materials'),
+        'additional_information': getValueById('Additional-Information'),
+        'will_you_be_using_insurance_2': getValueById('Will-You-Be-Using-Insurance-2'),
+        'insurance_company_2': getValueById('Insurance-Company-2'),
+        'policy_type_2': getValueById('Policy-Type-2'),
+        'started_claim_process_2': getValueById('Started-Claim-Process-2'),
+        'insurance_help_2': getValueById('Insurance-Help-2'),
+        'quote_id': getValueById('quote-id'),
+        'min_price_field': getValueById('min-price-field'),
+        'max_price_field': getValueById('max-price-field')
     };
 
     try {
@@ -184,11 +184,34 @@ async function submitFormToSupabase() {
         if (error) {
             throw error;
         }
-        
+
         console.log('Form data submitted successfully:', data);
+        // Redirect to completion page
+        window.location.href = 'https://roofer-scout.webflow.io/user-info-form/form-completion-page';
     } catch (error) {
         console.error('Error submitting form data:', error);
     }
+}
+
+// Helper functions to safely retrieve values from elements
+function getValueById(id) {
+    const element = document.getElementById(id);
+    return element ? element.value : '';
+}
+
+function getCheckedById(id) {
+    const element = document.getElementById(id);
+    return element ? element.checked : false;
+}
+
+function getRadioValueByName(name) {
+    const element = document.querySelector(`input[name="${name}"]:checked`);
+    return element ? element.value : '';
+}
+
+function getSelectedOptionsById(id) {
+    const element = document.getElementById(id);
+    return element ? Array.from(element.selectedOptions).map(opt => opt.value) : [];
 }
 
 // Attach the submit function to the button click event
