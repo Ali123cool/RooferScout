@@ -137,6 +137,12 @@ function generateRandomString(length) {
     return result;
 }
 
+function redirectToCompletionPage() {
+    // Add a small delay to ensure all operations are complete
+    setTimeout(() => {
+        window.location.href = 'https://roofer-scout.webflow.io/user-info-form/form-completion-page';
+    }, 500); // Adjust the delay if necessary
+}
 // Function to submit form data to Supabase
 async function submitFormToSupabase() {
     // Format: 'supabase_column_name': document.getElementById('webflow_html_id').value
@@ -186,12 +192,11 @@ async function submitFormToSupabase() {
         }
 
         console.log('Form data submitted successfully:', data);
-        console.log('Redirecting to the completion page...');
 
-        // Redirect to completion page
-        setTimeout(() => {
-            window.location.href = 'https://roofer-scout.webflow.io/user-info-form/form-completion-page';
-        }, 100);  // Slight delay
+        // Force cache refresh by reloading the current page before redirecting
+        window.location.reload(true);  // True forces the reload from the server
+        redirectToCompletionPage(); // Redirect after refresh
+
     } catch (error) {
         console.error('Error submitting form data:', error);
     }
