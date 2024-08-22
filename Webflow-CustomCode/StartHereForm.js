@@ -16,21 +16,32 @@ async function calculatePriceRange() {
     const roofSqFtRange = document.getElementById('Estimated-Roof-Sq-Ft').value;
     const steepness = document.querySelector('input[name="Roof-Steepness"]:checked').value;
 
-    console.log('Values selected:', { material, serviceType, state, stories, buildingType, roofSqFtRange, steepness });
-
-    // Fetching necessary data from Supabase
-    const materialCosts = await fetchSupabaseData('rooferscout_material_costs');
-    const stateFactors = await fetchSupabaseData('rooferscout_state_factors');
-    const serviceTypeFactors = await fetchSupabaseData('rooferscout_service_type_factors');
-    const steepnessCosts = await fetchSupabaseData('rooferscout_steepness_costs');
-    const storiesCosts = await fetchSupabaseData('rooferscout_stories_costs');
-    const buildingTypeFactors = await fetchSupabaseData('rooferscout_building_type_factors');
-    const estimatedRoofSqFt = await fetchSupabaseData('rooferscout_estimated_roof_sq_ft');
-
-    if (!materialCosts || !stateFactors || !serviceTypeFactors || !steepnessCosts || !storiesCosts || !buildingTypeFactors || !estimatedRoofSqFt) {
-        console.error('Failed to fetch all necessary data.');
+    if (!material || !serviceType || !state || !stories || !buildingType || !roofSqFtRange || !steepness) {
+        console.error('Some required form fields are missing or not selected.');
         return;
     }
+
+    // Fetch necessary data from Supabase for each variable
+    const materialCosts = await fetchSupabaseData('rooferscout_material_costs');
+    if (!materialCosts) return;
+    
+    const stateFactors = await fetchSupabaseData('rooferscout_state_factors');
+    if (!stateFactors) return;
+    
+    const serviceTypeFactors = await fetchSupabaseData('rooferscout_service_type_factors');
+    if (!serviceTypeFactors) return;
+    
+    const steepnessCosts = await fetchSupabaseData('rooferscout_steepness_costs');
+    if (!steepnessCosts) return;
+    
+    const storiesCosts = await fetchSupabaseData('rooferscout_stories_costs');
+    if (!storiesCosts) return;
+    
+    const buildingTypeFactors = await fetchSupabaseData('rooferscout_building_type_factors');
+    if (!buildingTypeFactors) return;
+    
+    const estimatedRoofSqFt = await fetchSupabaseData('rooferscout_estimated_roof_sq_ft');
+    if (!estimatedRoofSqFt) return;
 
     // Find specific values for the selected options
     const selectedMaterialCost = materialCosts.find(item => item.material_name === material);
@@ -41,6 +52,7 @@ async function calculatePriceRange() {
     const selectedBuildingTypeFactor = buildingTypeFactors.find(item => item.building_type === buildingType);
     const selectedRoofSqFt = estimatedRoofSqFt.find(item => item.range_label === roofSqFtRange);
 
+    // Check if any of the selected options are not found
     if (!selectedMaterialCost || !selectedStateFactor || !selectedServiceTypeFactor || !selectedSteepnessCost || !selectedStoriesCost || !selectedBuildingTypeFactor || !selectedRoofSqFt) {
         console.error('Some required data is missing.');
         return;
