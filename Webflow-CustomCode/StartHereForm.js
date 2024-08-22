@@ -5,10 +5,19 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('calculate-button').addEventListener('click', async () => {
-        try {
-            console.log('Calculate button clicked.');
+    console.log("DOM fully loaded and parsed");
 
+    const calculateButton = document.getElementById('calculate-button');
+    if (!calculateButton) {
+        console.error("Calculate button not found!");
+        return;
+    }
+
+    calculateButton.addEventListener('click', async (event) => {
+        event.preventDefault();  // Prevent the default action of the anchor link
+        console.log('Calculate button clicked.');
+
+        try {
             // Fetch entire Material Cost table
             const { data: materialData, error: materialError } = await supabase
                 .from('rooferscout_material_costs')
