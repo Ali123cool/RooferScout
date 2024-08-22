@@ -1,5 +1,3 @@
-
-
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
 const supabaseUrl = 'https://wcpcigdzqcmxvzfpbazr.supabase.co';
@@ -46,27 +44,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('min-price-field').value = minPrice;
         document.getElementById('max-price-field').value = maxPrice;
         document.getElementById('quote-id').value = generateRandomString(32);
-    }
-
-    async function getMaterialCost() {
-        console.log('Fetching material cost...');
-        const element = document.getElementById('Desired-Material-Type');
-        const value = element.value;
-        try {
-            const { data, error } = await supabase
-                .from('rooferscout_material_costs')
-                .select('*')
-                .eq('material_name', value);
-            if (error || !data || !data.length) {
-                console.error('Failed to fetch material costs', error);
-                return null;
-            }
-            console.log('Material Cost:', data[0]);
-            return data[0];
-        } catch (error) {
-            console.error('Error fetching material cost:', error);
-            return null;
-        }
     }
 
     async function getMaterialCost() {
@@ -233,4 +210,3 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error('Calculate button not found in DOM');
     }
 });
-
