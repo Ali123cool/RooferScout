@@ -102,37 +102,38 @@ function generateRandomString(length) {
 
 // Function to submit form data to Supabase
 async function submitFormToSupabase() {
+    // Format: 'supabase_column_name': document.getElementById('webflow_html_id').value
     const formData = {
-        'First-Name': document.getElementById('First-Name').value,
-        'Last-Name': document.getElementById('Last-Name').value,
-        'Business-Name': document.getElementById('Business-Name').value,
-        'Email': document.getElementById('Email').value,
-        'Phone-Number': document.getElementById('Phone-Number').value,
-        'Call-Allowed': document.getElementById('Call-Allowed').checked, // Checkbox
-        'Text-Allowed': document.getElementById('Text-Allowed').checked, // Checkbox
-        'Email-Allowed': document.getElementById('Email-Allowed').checked, // Checkbox
-        'TOS': document.getElementById('TOS').checked, // Checkbox
-        'Priv-Pol': document.getElementById('Priv-Pol').checked, // Checkbox
-        'Street-Address': document.getElementById('Street-Address').value,
-        'Street-Address-2': document.getElementById('Street-Address-2').value,
-        'State': document.getElementById('State').value,
-        'City': document.getElementById('City').value,
-        'Zip-Code': document.getElementById('Zip-Code').value,
-        'Building-Type': document.getElementById('Building-Type').value,
-        'Estimated-Roof-Sq-Ft': document.getElementById('Estimated-Roof-Sq-Ft').value,
-        'Stories': document.getElementById('Stories').value,
-        'Roof-Steepness': document.querySelector('input[name="Roof-Steepness"]:checked').value, // Radio
-        'Type-Of-Service-Desired': document.getElementById('Type-Of-Service-Desired').value,
-        'Current-Material-Type': document.getElementById('Current-Material-Type').value,
-        'Desired-Material-Type': document.getElementById('Desired-Material-Type').value,
-        'Additional-Services': Array.from(document.getElementById('Additional-Services').selectedOptions).map(opt => opt.value), // Multi-select
-        'Specific-Materials': document.getElementById('Specific-Materials').value,
-        'Additional-Information': document.getElementById('Additional-Information').value,
-        'Will-You-Be-Using-Insurance-2': document.getElementById('Will-You-Be-Using-Insurance-2').value,
-        'Insurance-Company-2': document.getElementById('Insurance-Company-2').value,
-        'Policy-Type-2': document.getElementById('Policy-Type-2').value,
-        'Started-Claim-Process-2': document.getElementById('Started-Claim-Process-2').value,
-        'Insurance-Help-2': document.getElementById('Insurance-Help-2').value,
+        'first-name': document.getElementById('First-Name').value,
+        'last-name': document.getElementById('Last-Name').value,
+        'business-name': document.getElementById('Business-Name').value,
+        'email': document.getElementById('Email').value,
+        'phone-number': document.getElementById('Phone-Number').value,
+        'call-allowed': document.getElementById('Call-Allowed').checked, // Checkbox
+        'text-allowed': document.getElementById('Text-Allowed').checked, // Checkbox
+        'email-allowed': document.getElementById('Email-Allowed').checked, // Checkbox
+        'tos': document.getElementById('TOS').checked, // Checkbox
+        'priv-pol': document.getElementById('Priv-Pol').checked, // Checkbox
+        'street-address': document.getElementById('Street-Address').value,
+        'street-address-2': document.getElementById('Street-Address-2').value,
+        'state': document.getElementById('State').value,
+        'city': document.getElementById('City').value,
+        'zip-code': document.getElementById('Zip-Code').value,
+        'building-type': document.getElementById('Building-Type').value,
+        'estimated-roof-sq-ft': document.getElementById('Estimated-Roof-Sq-Ft').value,
+        'stories': document.getElementById('Stories').value,
+        'roof-steepness': document.querySelector('input[name="Roof-Steepness"]:checked').value, // Radio
+        'type-of-service-desired': document.getElementById('Type-Of-Service-Desired').value,
+        'current-material-type': document.getElementById('Current-Material-Type').value,
+        'desired-material-type': document.getElementById('Desired-Material-Type').value,
+        'additional-services': Array.from(document.getElementById('Additional-Services').selectedOptions).map(opt => opt.value), // Multi-select
+        'specific-materials': document.getElementById('Specific-Materials').value,
+        'additional-information': document.getElementById('Additional-Information').value,
+        'will-you-be-using-insurance-2': document.getElementById('Will-You-Be-Using-Insurance-2').value,
+        'insurance-company-2': document.getElementById('Insurance-Company-2').value,
+        'policy-type-2': document.getElementById('Policy-Type-2').value,
+        'started-claim-process-2': document.getElementById('Started-Claim-Process-2').value,
+        'insurance-help-2': document.getElementById('Insurance-Help-2').value,
         'quote-id': document.getElementById('quote-id').value,
         'min-price-field': document.getElementById('min-price-field').value,
         'max-price-field': document.getElementById('max-price-field').value
