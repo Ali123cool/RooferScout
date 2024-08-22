@@ -5,10 +5,12 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function fetchData(table, column, value) {
+    console.log(`Fetching data from ${table} where ${column} = ${value}`);
     const { data, error } = await supabase.from(table).select('*').eq(column, value);
     if (error) {
         throw new Error(`${table} Error: ${error.message}`);
     }
+    console.log(`Data from ${table}: `, data);
     return data.length > 0 ? data[0] : null;
 }
 
@@ -24,6 +26,17 @@ async function calculatePrice() {
         const selectedRoofSqFt = document.getElementById('Estimated-Roof-Sq-Ft').value;
         const selectedSteepness = document.querySelector('input[name="Roof-Steepness"]:checked').value;
 
+        // Log inputs to confirm they are being retrieved correctly
+        console.log({
+            selectedMaterial,
+            selectedServiceType,
+            selectedState,
+            selectedStories,
+            selectedBuildingType,
+            selectedRoofSqFt,
+            selectedSteepness
+        });
+
         const materialData = await fetchData('rooferscout_material_costs', 'material_name', selectedMaterial);
         const serviceTypeData = await fetchData('rooferscout_service_type_factors', 'service_type', selectedServiceType);
         const stateData = await fetchData('rooferscout_state_factors', 'state_name', selectedState);
@@ -32,6 +45,7 @@ async function calculatePrice() {
         const roofSqFtData = await fetchData('rooferscout_estimated_roof_sq_ft', 'range_label', selectedRoofSqFt);
         const steepnessData = await fetchData('rooferscout_steepness_costs', 'steepness_level', selectedSteepness);
 
+        // Check if any of the required data is missing
         if (!materialData || !serviceTypeData || !stateData || !storiesData || !buildingTypeData || !roofSqFtData || !steepnessData) {
             console.error('Required data not found for calculation.');
             return;
@@ -55,6 +69,7 @@ async function calculatePrice() {
 }
 
 function displayPrices(minPrice, maxPrice) {
+    console.log('Displaying prices...');
     document.getElementById('min-price').innerText = `${minPrice}`;
     document.getElementById('max-price').innerText = `${maxPrice}`;
     document.getElementById('min-price-field').value = minPrice;
@@ -72,8 +87,17 @@ function generateRandomString(length) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('calculate-button').addEventListener('click', (event) => {
+    console.log('DOM fully loaded, setting up event listener.');
+    const calculateButton = document.getElementById('calculate-button');
+    
+    if (!calculateButton) {
+        console.error('Calculate button not found!');
+        return;
+    }
+
+    calculateButton.addEventListener('click', (event) => {
         event.preventDefault();
         calculatePrice();
     });
 });
+
