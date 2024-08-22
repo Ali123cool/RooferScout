@@ -5,7 +5,8 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 function initApp() {
-    document.getElementById('calculate-button').addEventListener('click', async () => {
+    document.getElementById('calculate-button').addEventListener('click', async (event) => {
+        event.preventDefault();  // Prevent the default anchor behavior
         try {
             console.log('Calculate button clicked.');
 
