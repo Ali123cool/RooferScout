@@ -1,3 +1,5 @@
+
+
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
 const supabaseUrl = 'https://wcpcigdzqcmxvzfpbazr.supabase.co';
@@ -7,45 +9,63 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM fully loaded and parsed');
 
-    async function calculatePriceRange() {
+    async function calculatePriceRange(event) {
+        event.preventDefault(); // Prevent default anchor behavior
+        console.log('Calculate button clicked. Starting price range calculation...');
+
+        const material = await getMaterialCost();
+        if (!material) return;
+
+        const serviceType = await getServiceTypeFactor();
+        if (!serviceType) return;
+
+        const state = await getStateFactor();
+        if (!state) return;
+
+        const stories = await getStoriesCost();
+        if (!stories) return;
+
+        const buildingType = await getBuildingTypeFactor();
+        if (!buildingType) return;
+
+        const roofSqFt = await getRoofSqFt();
+        if (!roofSqFt) return;
+
+        const steepness = await getSteepnessCost();
+        if (!steepness) return;
+
+        const minPrice = Math.round(roofSqFt.upper_value * ((material.min_cost * serviceType.factor * state.factor * buildingType.factor) + stories.cost + steepness.cost));
+        const maxPrice = Math.round(roofSqFt.upper_value * ((material.max_cost * serviceType.factor * state.factor * buildingType.factor) + stories.cost + steepness.cost));
+
+        console.log('Min Price:', minPrice);
+        console.log('Max Price:', maxPrice);
+
+        document.getElementById('min-price').innerText = `${minPrice}`;
+        document.getElementById('max-price').innerText = `${maxPrice}`;
+
+        document.getElementById('min-price-field').value = minPrice;
+        document.getElementById('max-price-field').value = maxPrice;
+        document.getElementById('quote-id').value = generateRandomString(32);
+    }
+
+    async function getMaterialCost() {
+        console.log('Fetching material cost...');
+        const element = document.getElementById('Desired-Material-Type');
+        const value = element.value;
         try {
-            console.log('Calculate button clicked. Starting price range calculation...');
-
-            const material = await getMaterialCost();
-            if (!material) return;
-
-            const serviceType = await getServiceTypeFactor();
-            if (!serviceType) return;
-
-            const state = await getStateFactor();
-            if (!state) return;
-
-            const stories = await getStoriesCost();
-            if (!stories) return;
-
-            const buildingType = await getBuildingTypeFactor();
-            if (!buildingType) return;
-
-            const roofSqFt = await getRoofSqFt();
-            if (!roofSqFt) return;
-
-            const steepness = await getSteepnessCost();
-            if (!steepness) return;
-
-            const minPrice = Math.round(roofSqFt.upper_value * ((material.min_cost * serviceType.factor * state.factor * buildingType.factor) + stories.cost + steepness.cost));
-            const maxPrice = Math.round(roofSqFt.upper_value * ((material.max_cost * serviceType.factor * state.factor * buildingType.factor) + stories.cost + steepness.cost));
-
-            console.log('Min Price:', minPrice);
-            console.log('Max Price:', maxPrice);
-
-            document.getElementById('min-price').innerText = `${minPrice}`;
-            document.getElementById('max-price').innerText = `${maxPrice}`;
-
-            document.getElementById('min-price-field').value = minPrice;
-            document.getElementById('max-price-field').value = maxPrice;
-            document.getElementById('quote-id').value = generateRandomString(32);
+            const { data, error } = await supabase
+                .from('rooferscout_material_costs')
+                .select('*')
+                .eq('material_name', value);
+            if (error || !data || !data.length) {
+                console.error('Failed to fetch material costs', error);
+                return null;
+            }
+            console.log('Material Cost:', data[0]);
+            return data[0];
         } catch (error) {
-            console.error('Error during price calculation:', error);
+            console.error('Error fetching material cost:', error);
+            return null;
         }
     }
 
@@ -213,3 +233,4 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error('Calculate button not found in DOM');
     }
 });
+
