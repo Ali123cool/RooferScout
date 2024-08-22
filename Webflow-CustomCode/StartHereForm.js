@@ -53,10 +53,6 @@ async function calculatePriceRange() {
     const estimatedRoofSqFt = await fetchSupabaseData('rooferscout_estimated_roof_sq_ft');
     console.log('Fetched estimated roof sq ft:', estimatedRoofSqFt);
 
-    // Continue with the rest of your code...
-}
-s
-
     // Check if any of the fetched data is null due to a failed fetch operation
     if (!materialCosts || !stateFactors || !serviceTypeFactors || !steepnessCosts || !storiesCosts || !buildingTypeFactors || !estimatedRoofSqFt) {
         console.error('Failed to fetch all necessary data. Please check your internet connection and try again.');
