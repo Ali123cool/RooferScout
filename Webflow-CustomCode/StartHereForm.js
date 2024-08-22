@@ -20,59 +20,63 @@ document.getElementById('roofing-form').addEventListener('submit', function(even
 
 // Function to calculate the price range
 async function calculatePriceRange() {
-  const material = document.getElementById('Desired-Material-Type').value;
-  const serviceType = document.getElementById('Type-Of-Service-Desired').value;
-  const state = document.getElementById('State').value;
-  const stories = document.getElementById('Stories').value;
-  const buildingType = document.getElementById('Building-Type').value;
-  const steepness = document.querySelector('input[name="Roof-Steepness"]:checked').value;
+    const material = document.getElementById('Desired-Material-Type').value;
+    const serviceType = document.getElementById('Type-Of-Service-Desired').value;
+    const state = document.getElementById('State').value;
+    const stories = document.getElementById('Stories').value;
+    const buildingType = document.getElementById('Building-Type').value;
+    const roofSqFtRange = document.getElementById('Estimated-Roof-Sq-Ft').value;
+    const steepness = document.querySelector('input[name="Roof-Steepness"]:checked').value;
 
-  // Fetch data from Supabase tables
-  const materialCosts = await fetchSupabaseData('rooferscout_material_costs');
-  const stateFactors = await fetchSupabaseData('rooferscout_state_factors');
-  const serviceTypeFactors = await fetchSupabaseData('rooferscout_service_type_factors');
-  const steepnessCosts = await fetchSupabaseData('rooferscout_steepness_costs');
-  const storiesCosts = await fetchSupabaseData('rooferscout_stories_costs');
-  const buildingTypeFactors = await fetchSupabaseData('rooferscout_building_type_factors');
-  const estimatedRoofSqFt = await fetchSupabaseData('rooferscout_estimated_roof_sq_ft');
+    // Fetch data from Supabase tables
+    const materialCosts = await fetchSupabaseData('rooferscout_material_costs');
+    const stateFactors = await fetchSupabaseData('rooferscout_state_factors');
+    const serviceTypeFactors = await fetchSupabaseData('rooferscout_service_type_factors');
+    const steepnessCosts = await fetchSupabaseData('rooferscout_steepness_costs');
+    const storiesCosts = await fetchSupabaseData('rooferscout_stories_costs');
+    const buildingTypeFactors = await fetchSupabaseData('rooferscout_building_type_factors');
+    const estimatedRoofSqFt = await fetchSupabaseData('rooferscout_estimated_roof_sq_ft');
 
-  // Check if any of the fetched data is null due to a failed fetch operation
-  if (!materialCosts || !stateFactors || !serviceTypeFactors || !steepnessCosts || !storiesCosts || !buildingTypeFactors || !estimatedRoofSqFt) {
-    console.error('Failed to fetch all necessary data. Please check your internet connection and try again.');
-    return;
-  }
+    // Check if any of the fetched data is null due to a failed fetch operation
+    if (!materialCosts || !stateFactors || !serviceTypeFactors || !steepnessCosts || !storiesCosts || !buildingTypeFactors || !estimatedRoofSqFt) {
+        console.error('Failed to fetch all necessary data. Please check your internet connection and try again.');
+        return;
+    }
 
-  // Find specific values for the selected options
-  const selectedMaterialCost = materialCosts.find(item => item.material_name === material);
-  const selectedStateFactor = stateFactors.find(item => item.state_name === state);
-  const selectedServiceTypeFactor = serviceTypeFactors.find(item => item.service_type === serviceType);
-  const selectedSteepnessCost = steepnessCosts.find(item => item.steepness_level === steepness);
-  const selectedStoriesCost = storiesCosts.find(item => item.stories_count === stories);
-  const selectedBuildingTypeFactor = buildingTypeFactors.find(item => item.building_type === buildingType);
-  const selectedRoofSqFt = estimatedRoofSqFt.find(item => item.range_label === buildingType);
+    // Find specific values for the selected options
+    const selectedMaterialCost = materialCosts.find(item => item.material_name === material);
+    const selectedStateFactor = stateFactors.find(item => item.state_name === state);
+    const selectedServiceTypeFactor = serviceTypeFactors.find(item => item.service_type === serviceType);
+    const selectedSteepnessCost = steepnessCosts.find(item => item.steepness_level === steepness);
+    const selectedStoriesCost = storiesCosts.find(item => item.stories_count === stories);
+    const selectedBuildingTypeFactor = buildingTypeFactors.find(item => item.building_type === buildingType);
 
-  if (!selectedMaterialCost || !selectedStateFactor || !selectedServiceTypeFactor || !selectedSteepnessCost || !selectedStoriesCost || !selectedBuildingTypeFactor || !selectedRoofSqFt) {
-    console.error('Some required data is missing.');
-    return;
-  }
+    // Find the corresponding entry in the roof square footage table based on the selected range
+    const selectedRoofSqFt = estimatedRoofSqFt.find(item => item.range_label === roofSqFtRange);
 
-  // Perform the calculations using the fetched square footage
-  const minPrice = Math.round(selectedRoofSqFt.sq_ft * ((selectedMaterialCost.min_cost * selectedServiceTypeFactor.factor * selectedStateFactor.factor * selectedBuildingTypeFactor.factor) + selectedStoriesCost.cost + selectedSteepnessCost.cost));
-  const maxPrice = Math.round(selectedRoofSqFt.sq_ft * ((selectedMaterialCost.max_cost * selectedServiceTypeFactor.factor * selectedStateFactor.factor * selectedBuildingTypeFactor.factor) + selectedStoriesCost.cost + selectedSteepnessCost.cost));
+    // Ensure selectedRoofSqFt is valid
+    if (!selectedMaterialCost || !selectedStateFactor || !selectedServiceTypeFactor || !selectedSteepnessCost || !selectedStoriesCost || !selectedBuildingTypeFactor || !selectedRoofSqFt) {
+        console.error('Some required data is missing.');
+        return;
+    }
 
-  // Generate a 32-character random quote ID
-  const quoteId = generateRandomString(32);
+    // Perform the calculations using the fetched square footage
+    const minPrice = Math.round(selectedRoofSqFt.sq_ft * ((selectedMaterialCost.min_cost * selectedServiceTypeFactor.factor * selectedStateFactor.factor * selectedBuildingTypeFactor.factor) + selectedStoriesCost.cost + selectedSteepnessCost.cost));
+    const maxPrice = Math.round(selectedRoofSqFt.sq_ft * ((selectedMaterialCost.max_cost * selectedServiceTypeFactor.factor * selectedStateFactor.factor * selectedBuildingTypeFactor.factor) + selectedStoriesCost.cost + selectedSteepnessCost.cost));
 
-  // Update the hidden fields with the calculated prices and quote ID
-  document.getElementById('min-price-field').value = minPrice;
-  document.getElementById('max-price-field').value = maxPrice;
-  document.getElementById('quote-id').value = quoteId;
+    // Generate a 32-character random quote ID
+    const quoteId = generateRandomString(32);
 
-  console.log('Min Price:', minPrice);
-  console.log('Max Price:', maxPrice);
-  console.log('Quote ID:', quoteId);
+    // Update the hidden fields with the calculated prices and quote ID
+    document.getElementById('min-price-field').value = minPrice;
+    document.getElementById('max-price-field').value = maxPrice;
+    document.getElementById('quote-id').value = quoteId;
+
+    console.log('Min Price:', minPrice);
+    console.log('Max Price:', maxPrice);
+    console.log('Quote ID:', quoteId);
 }
-
+  
 // Function to submit the form data to Supabase
 async function submitForm() {
   const formData = new FormData(document.getElementById('roofing-form'));
