@@ -104,39 +104,39 @@ function generateRandomString(length) {
 async function submitFormToSupabase() {
     // Format: 'supabase_column_name': document.getElementById('webflow_html_id').value
     const formData = {
-        'first-name': document.getElementById('First-Name').value,
-        'last-name': document.getElementById('Last-Name').value,
-        'business-name': document.getElementById('Business-Name').value,
+        'first_name': document.getElementById('First-Name').value,
+        'last_name': document.getElementById('Last-Name').value,
+        'business_name': document.getElementById('Business-Name').value,
         'email': document.getElementById('Email').value,
-        'phone-number': document.getElementById('Phone-Number').value,
-        'call-allowed': document.getElementById('Call-Allowed').checked, // Checkbox
-        'text-allowed': document.getElementById('Text-Allowed').checked, // Checkbox
-        'email-allowed': document.getElementById('Email-Allowed').checked, // Checkbox
-        'tos': document.getElementById('TOS').checked, // Checkbox
-        'priv-pol': document.getElementById('Priv-Pol').checked, // Checkbox
-        'street-address': document.getElementById('Street-Address').value,
-        'street-address-2': document.getElementById('Street-Address-2').value,
+        'phone_number': document.getElementById('Phone-Number').value,
+        'call_allowed': document.getElementById('Call-Allowed').checked,
+        'text_allowed': document.getElementById('Text-Allowed').checked,
+        'email_allowed': document.getElementById('Email-Allowed').checked,
+        'tos': document.getElementById('TOS').checked,
+        'priv_pol': document.getElementById('Priv-Pol').checked,
+        'street_address': document.getElementById('Street-Address').value,
+        'street_address_2': document.getElementById('Street-Address-2').value,
         'state': document.getElementById('State').value,
         'city': document.getElementById('City').value,
-        'zip-code': document.getElementById('Zip-Code').value,
-        'building-type': document.getElementById('Building-Type').value,
-        'estimated-roof-sq-ft': document.getElementById('Estimated-Roof-Sq-Ft').value,
+        'zip_code': document.getElementById('Zip-Code').value,
+        'building_type': document.getElementById('Building-Type').value,
+        'estimated_roof_sq_ft': document.getElementById('Estimated-Roof-Sq-Ft').value,
         'stories': document.getElementById('Stories').value,
-        'roof-steepness': document.querySelector('input[name="Roof-Steepness"]:checked').value, // Radio
-        'type-of-service-desired': document.getElementById('Type-Of-Service-Desired').value,
-        'current-material-type': document.getElementById('Current-Material-Type').value,
-        'desired-material-type': document.getElementById('Desired-Material-Type').value,
-        'additional-services': Array.from(document.getElementById('Additional-Services').selectedOptions).map(opt => opt.value), // Multi-select
-        'specific-materials': document.getElementById('Specific-Materials').value,
-        'additional-information': document.getElementById('Additional-Information').value,
-        'will-you-be-using-insurance-2': document.getElementById('Will-You-Be-Using-Insurance-2').value,
-        'insurance-company-2': document.getElementById('Insurance-Company-2').value,
-        'policy-type-2': document.getElementById('Policy-Type-2').value,
-        'started-claim-process-2': document.getElementById('Started-Claim-Process-2').value,
-        'insurance-help-2': document.getElementById('Insurance-Help-2').value,
-        'quote-id': document.getElementById('quote-id').value,
-        'min-price-field': document.getElementById('min-price-field').value,
-        'max-price-field': document.getElementById('max-price-field').value
+        'roof_steepness': document.querySelector('input[name="Roof-Steepness"]:checked').value,
+        'type_of_service_desired': document.getElementById('Type-Of-Service-Desired').value,
+        'current_material_type': document.getElementById('Current-Material-Type').value,
+        'desired_material_type': document.getElementById('Desired-Material-Type').value,
+        'additional_services': Array.from(document.getElementById('Additional-Services').selectedOptions).map(opt => opt.value),
+        'specific_materials': document.getElementById('Specific-Materials').value,
+        'additional_information': document.getElementById('Additional-Information').value,
+        'will_you_be_using_insurance_2': document.getElementById('Will-You-Be-Using-Insurance-2').value,
+        'insurance_company_2': document.getElementById('Insurance-Company-2').value,
+        'policy_type_2': document.getElementById('Policy-Type-2').value,
+        'started_claim_process_2': document.getElementById('Started-Claim-Process-2').value,
+        'insurance_help_2': document.getElementById('Insurance-Help-2').value,
+        'quote_id': document.getElementById('quote-id').value,
+        'min_price_field': document.getElementById('min-price-field').value,
+        'max_price_field': document.getElementById('max-price-field').value
     };
 
     try {
