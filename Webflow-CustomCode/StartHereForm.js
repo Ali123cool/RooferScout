@@ -19,6 +19,8 @@ document.getElementById('roofing-form').addEventListener('submit', function(even
 
 // Function to calculate the price range
 async function calculatePriceRange() {
+    console.log('Starting price range calculation...');
+
     const material = document.getElementById('Desired-Material-Type').value;
     const serviceType = document.getElementById('Type-Of-Service-Desired').value;
     const state = document.getElementById('State').value;
@@ -27,14 +29,33 @@ async function calculatePriceRange() {
     const roofSqFtRange = document.getElementById('Estimated-Roof-Sq-Ft').value;
     const steepness = document.querySelector('input[name="Roof-Steepness"]:checked').value;
 
+    console.log('Values selected:', { material, serviceType, state, stories, buildingType, roofSqFtRange, steepness });
+
     // Fetch data from Supabase tables
     const materialCosts = await fetchSupabaseData('rooferscout_material_costs');
+    console.log('Fetched material costs:', materialCosts);
+
     const stateFactors = await fetchSupabaseData('rooferscout_state_factors');
+    console.log('Fetched state factors:', stateFactors);
+
     const serviceTypeFactors = await fetchSupabaseData('rooferscout_service_type_factors');
+    console.log('Fetched service type factors:', serviceTypeFactors);
+
     const steepnessCosts = await fetchSupabaseData('rooferscout_steepness_costs');
+    console.log('Fetched steepness costs:', steepnessCosts);
+
     const storiesCosts = await fetchSupabaseData('rooferscout_stories_costs');
+    console.log('Fetched stories costs:', storiesCosts);
+
     const buildingTypeFactors = await fetchSupabaseData('rooferscout_building_type_factors');
+    console.log('Fetched building type factors:', buildingTypeFactors);
+
     const estimatedRoofSqFt = await fetchSupabaseData('rooferscout_estimated_roof_sq_ft');
+    console.log('Fetched estimated roof sq ft:', estimatedRoofSqFt);
+
+    // Continue with the rest of your code...
+}
+s
 
     // Check if any of the fetched data is null due to a failed fetch operation
     if (!materialCosts || !stateFactors || !serviceTypeFactors || !steepnessCosts || !storiesCosts || !buildingTypeFactors || !estimatedRoofSqFt) {
