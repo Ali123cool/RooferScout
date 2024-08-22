@@ -4,21 +4,11 @@ const supabaseUrl = 'https://wcpcigdzqcmxvzfpbazr.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndjcGNpZ2R6cWNteHZ6ZnBiYXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjQxODIzMDAsImV4cCI6MjAzOTc1ODMwMH0.0AtbcXKmjDZY-HSu235YDWY5qCyd0JQTwWxtv2MWX5A';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Wrap the main logic in a function to ensure it's executed only when the script is fully loaded
 function initApp() {
-    console.log("Initializing the application...");
-
-    const calculateButton = document.getElementById('calculate-button');
-    if (!calculateButton) {
-        console.error("Calculate button not found!");
-        return;
-    }
-
-    calculateButton.addEventListener('click', async (event) => {
-        event.preventDefault();  // Prevent the default action of the anchor link
-        console.log('Calculate button clicked.');
-
+    document.getElementById('calculate-button').addEventListener('click', async () => {
         try {
+            console.log('Calculate button clicked.');
+
             // Fetch Material Cost
             const selectedMaterial = document.getElementById('Desired-Material-Type').value;
             const { data: materialData, error: materialError } = await supabase
@@ -172,3 +162,5 @@ function generateRandomString(length) {
     }
     return result;
 }
+
+document.addEventListener('DOMContentLoaded', initApp);
