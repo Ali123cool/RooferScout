@@ -16,6 +16,8 @@ async function fetchData(table, column, value) {
 
 async function calculatePrice() {
     try {
+        clearFields(); // Clear the fields before calculation
+        document.body.style.cursor = 'wait'; // Change cursor to spinner
         console.log('Calculate button clicked.');
 
         const selectedMaterial = document.getElementById('Desired-Material-Type').value;
@@ -65,7 +67,19 @@ async function calculatePrice() {
 
     } catch (error) {
         console.error('Unexpected error:', error);
+    } finally {
+        document.body.style.cursor = 'default'; // Revert cursor to default
     }
+}
+
+function clearFields() {
+    console.log('Clearing fields...');
+    // Clear the price fields and the hidden fields
+    document.getElementById('min-price').innerText = '';
+    document.getElementById('max-price').innerText = '';
+    document.getElementById('min-price-field').value = '';
+    document.getElementById('max-price-field').value = '';
+    document.getElementById('quote-id').value = '';
 }
 
 function displayPrices(minPrice, maxPrice) {
@@ -100,4 +114,3 @@ document.addEventListener('DOMContentLoaded', () => {
         calculatePrice();
     });
 });
-
