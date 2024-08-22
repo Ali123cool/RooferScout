@@ -6,29 +6,28 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 document.addEventListener('DOMContentLoaded', () => {
 
-
     async function calculatePriceRange() {
         console.log('Starting price range calculation...');
 
-        const material = await fetchValue('Desired-Material-Type', 'rooferscout_material_costs', 'material_name', 'min_cost', 'max_cost');
+        const material = await getMaterialCost();
         if (!material) return;
 
-        const serviceType = await fetchValue('Type-Of-Service-Desired', 'rooferscout_service_type_factors', 'service_type', 'factor');
+        const serviceType = await getServiceTypeFactor();
         if (!serviceType) return;
 
-        const state = await fetchValue('State', 'rooferscout_state_factors', 'state_name', 'factor');
+        const state = await getStateFactor();
         if (!state) return;
 
-        const stories = await fetchValue('Stories', 'rooferscout_stories_costs', 'stories_count', 'cost');
+        const stories = await getStoriesCost();
         if (!stories) return;
 
-        const buildingType = await fetchValue('Building-Type', 'rooferscout_building_type_factors', 'building_type', 'factor');
+        const buildingType = await getBuildingTypeFactor();
         if (!buildingType) return;
 
-        const roofSqFt = await fetchValue('Estimated-Roof-Sq-Ft', 'rooferscout_estimated_roof_sq_ft', 'range_label', 'upper_value');
+        const roofSqFt = await getRoofSqFt();
         if (!roofSqFt) return;
 
-        const steepness = await fetchValue('Roof-Steepness', 'rooferscout_steepness_costs', 'steepness_level', 'cost');
+        const steepness = await getSteepnessCost();
         if (!steepness) return;
 
         const minPrice = Math.round(roofSqFt.upper_value * ((material.min_cost * serviceType.factor * state.factor * buildingType.factor) + stories.cost + steepness.cost));
@@ -45,57 +44,109 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('quote-id').value = generateRandomString(32);
     }
 
-    async function fetchValue(elementId, tableName, keyColumn, ...valueColumns) {
-        const element = document.getElementById(elementId);
-        if (!element) {
-            console.error(`${elementId} element not found in the DOM`);
-            return null;
-        }
-
+    async function getMaterialCost() {
+        const element = document.getElementById('Desired-Material-Type');
         const value = element.value;
-        if (!value) {
-            console.error(`${elementId} value is not selected or empty`);
+        const { data, error } = await supabase
+            .from('rooferscout_material_costs')
+            .select('*')
+            .eq('material_name', value);
+        if (error || !data || !data.length) {
+            console.error('Failed to fetch material costs', error);
             return null;
         }
-
-        const data = await fetchSupabaseData(tableName);
-        if (!data) {
-            console.error(`Failed to fetch data from ${tableName}`);
-            return null;
-        }
-
-        console.log(`Fetched data from ${tableName}:`, data);
-
-        const selectedItem = data.find(item => item[keyColumn] === value);
-        if (!selectedItem) {
-            console.error(`${keyColumn} value for ${value} not found`);
-            return null;
-        }
-
-        const result = {};
-        valueColumns.forEach(column => {
-            result[column] = selectedItem[column];
-        });
-
-        console.log(`Selected ${keyColumn} value:`, result);
-        return result;
+        console.log('Material Cost:', data[0]);
+        return data[0];
     }
 
-    async function fetchSupabaseData(tableName) {
-        try {
-            const { data, error } = await supabase
-                .from(tableName)
-                .select();
-
-            if (error) {
-                console.error(`Error fetching data from ${tableName}:`, error.message, error.details);
-                return null;
-            }
-            return data;
-        } catch (err) {
-            console.error(`Network error fetching data from ${tableName}:`, err.message, err.stack);
+    async function getServiceTypeFactor() {
+        const element = document.getElementById('Type-Of-Service-Desired');
+        const value = element.value;
+        const { data, error } = await supabase
+            .from('rooferscout_service_type_factors')
+            .select('*')
+            .eq('service_type', value);
+        if (error || !data || !data.length) {
+            console.error('Failed to fetch service type factor', error);
             return null;
         }
+        console.log('Service Type Factor:', data[0]);
+        return data[0];
+    }
+
+    async function getStateFactor() {
+        const element = document.getElementById('State');
+        const value = element.value;
+        const { data, error } = await supabase
+            .from('rooferscout_state_factors')
+            .select('*')
+            .eq('state_name', value);
+        if (error || !data || !data.length) {
+            console.error('Failed to fetch state factor', error);
+            return null;
+        }
+        console.log('State Factor:', data[0]);
+        return data[0];
+    }
+
+    async function getStoriesCost() {
+        const element = document.getElementById('Stories');
+        const value = element.value;
+        const { data, error } = await supabase
+            .from('rooferscout_stories_costs')
+            .select('*')
+            .eq('stories_count', value);
+        if (error || !data || !data.length) {
+            console.error('Failed to fetch stories cost', error);
+            return null;
+        }
+        console.log('Stories Cost:', data[0]);
+        return data[0];
+    }
+
+    async function getBuildingTypeFactor() {
+        const element = document.getElementById('Building-Type');
+        const value = element.value;
+        const { data, error } = await supabase
+            .from('rooferscout_building_type_factors')
+            .select('*')
+            .eq('building_type', value);
+        if (error || !data || !data.length) {
+            console.error('Failed to fetch building type factor', error);
+            return null;
+        }
+        console.log('Building Type Factor:', data[0]);
+        return data[0];
+    }
+
+    async function getRoofSqFt() {
+        const element = document.getElementById('Estimated-Roof-Sq-Ft');
+        const value = element.value;
+        const { data, error } = await supabase
+            .from('rooferscout_estimated_roof_sq_ft')
+            .select('*')
+            .eq('range_label', value);
+        if (error || !data || !data.length) {
+            console.error('Failed to fetch roof square footage', error);
+            return null;
+        }
+        console.log('Roof Sq Ft:', data[0]);
+        return data[0];
+    }
+
+    async function getSteepnessCost() {
+        const element = document.querySelector('input[name="Roof-Steepness"]:checked');
+        const value = element.value;
+        const { data, error } = await supabase
+            .from('rooferscout_steepness_costs')
+            .select('*')
+            .eq('steepness_level', value);
+        if (error || !data || !data.length) {
+            console.error('Failed to fetch steepness cost', error);
+            return null;
+        }
+        console.log('Steepness Cost:', data[0]);
+        return data[0];
     }
 
     function generateRandomString(length) {
