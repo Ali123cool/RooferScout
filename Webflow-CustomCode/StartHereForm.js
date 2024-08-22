@@ -4,7 +4,7 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 
 // Create a single Supabase client for interacting with your database
 const supabaseUrl = 'https://wcpcigdzqcmxvzfpbazr.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndjcGNpZ2R6cWNteHZ6ZnBiYXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjQxODIzMDAsImV4cCI6MjAzOTc1ODMwMH0.0AtbcXKmjDZY-HSu235YDWY5qCyd0JQTwWxtv2MWX5A';
+const supabaseKey = 'your_supabase_key_here';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Event listener for the Calculate button
@@ -43,13 +43,13 @@ async function calculatePriceRange() {
   }
 
   // Find specific values for the selected options
-  const selectedMaterialCost = materialCosts.find(item => item.material === material);
-  const selectedStateFactor = stateFactors.find(item => item.state === state);
+  const selectedMaterialCost = materialCosts.find(item => item.material_name === material);
+  const selectedStateFactor = stateFactors.find(item => item.state_name === state);
   const selectedServiceTypeFactor = serviceTypeFactors.find(item => item.service_type === serviceType);
-  const selectedSteepnessCost = steepnessCosts.find(item => item.steepness === steepness);
-  const selectedStoriesCost = storiesCosts.find(item => item.stories === stories);
+  const selectedSteepnessCost = steepnessCosts.find(item => item.steepness_level === steepness);
+  const selectedStoriesCost = storiesCosts.find(item => item.stories_count === stories);
   const selectedBuildingTypeFactor = buildingTypeFactors.find(item => item.building_type === buildingType);
-  const selectedRoofSqFt = estimatedRoofSqFt.find(item => item.sq_ft === parseInt(document.getElementById('Estimated-Roof-Sq-Ft').value));
+  const selectedRoofSqFt = estimatedRoofSqFt.find(item => item.range_label === buildingType);
 
   if (!selectedMaterialCost || !selectedStateFactor || !selectedServiceTypeFactor || !selectedSteepnessCost || !selectedStoriesCost || !selectedBuildingTypeFactor || !selectedRoofSqFt) {
     console.error('Some required data is missing.');
@@ -57,8 +57,8 @@ async function calculatePriceRange() {
   }
 
   // Perform the calculations using the fetched square footage
-  const minPrice = Math.round(selectedRoofSqFt.sq_ft * ((selectedMaterialCost.min * selectedServiceTypeFactor.factor * selectedStateFactor.factor * selectedBuildingTypeFactor.factor) + selectedStoriesCost.cost + selectedSteepnessCost.cost));
-  const maxPrice = Math.round(selectedRoofSqFt.sq_ft * ((selectedMaterialCost.max * selectedServiceTypeFactor.factor * selectedStateFactor.factor * selectedBuildingTypeFactor.factor) + selectedStoriesCost.cost + selectedSteepnessCost.cost));
+  const minPrice = Math.round(selectedRoofSqFt.sq_ft * ((selectedMaterialCost.min_cost * selectedServiceTypeFactor.factor * selectedStateFactor.factor * selectedBuildingTypeFactor.factor) + selectedStoriesCost.cost + selectedSteepnessCost.cost));
+  const maxPrice = Math.round(selectedRoofSqFt.sq_ft * ((selectedMaterialCost.max_cost * selectedServiceTypeFactor.factor * selectedStateFactor.factor * selectedBuildingTypeFactor.factor) + selectedStoriesCost.cost + selectedSteepnessCost.cost));
 
   // Generate a 32-character random quote ID
   const quoteId = generateRandomString(32);
@@ -71,6 +71,26 @@ async function calculatePriceRange() {
   console.log('Min Price:', minPrice);
   console.log('Max Price:', maxPrice);
   console.log('Quote ID:', quoteId);
+}
+
+// Function to submit the form data to Supabase
+async function submitForm() {
+  const formData = new FormData(document.getElementById('roofing-form'));
+  const data = {};
+
+  formData.forEach((value, key) => {
+    data[key] = value;
+  });
+
+  const { error } = await supabase
+    .from('rooferscout_main_form_submission_v1') // Use the correct table name
+    .insert([data]);
+
+  if (error) {
+    console.error('Error submitting form data:', error);
+  } else {
+    console.log('Form data submitted successfully.');
+  }
 }
 
 // Utility function to generate a random string of the specified length
