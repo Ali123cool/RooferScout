@@ -5,9 +5,10 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM fully loaded and parsed');
 
     async function calculatePriceRange() {
-        console.log('Starting price range calculation...');
+        console.log('Calculate button clicked. Starting price range calculation...');
 
         const material = await getMaterialCost();
         if (!material) return;
@@ -45,6 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function getMaterialCost() {
+        console.log('Fetching material cost...');
         const element = document.getElementById('Desired-Material-Type');
         const value = element.value;
         const { data, error } = await supabase
@@ -60,6 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function getServiceTypeFactor() {
+        console.log('Fetching service type factor...');
         const element = document.getElementById('Type-Of-Service-Desired');
         const value = element.value;
         const { data, error } = await supabase
@@ -75,6 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function getStateFactor() {
+        console.log('Fetching state factor...');
         const element = document.getElementById('State');
         const value = element.value;
         const { data, error } = await supabase
@@ -90,6 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function getStoriesCost() {
+        console.log('Fetching stories cost...');
         const element = document.getElementById('Stories');
         const value = element.value;
         const { data, error } = await supabase
@@ -105,6 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function getBuildingTypeFactor() {
+        console.log('Fetching building type factor...');
         const element = document.getElementById('Building-Type');
         const value = element.value;
         const { data, error } = await supabase
@@ -120,6 +126,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function getRoofSqFt() {
+        console.log('Fetching roof square footage...');
         const element = document.getElementById('Estimated-Roof-Sq-Ft');
         const value = element.value;
         const { data, error } = await supabase
@@ -135,6 +142,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function getSteepnessCost() {
+        console.log('Fetching steepness cost...');
         const element = document.querySelector('input[name="Roof-Steepness"]:checked');
         const value = element.value;
         const { data, error } = await supabase
@@ -158,5 +166,11 @@ document.addEventListener('DOMContentLoaded', () => {
         return result;
     }
 
-    document.getElementById('calculate-button').addEventListener('click', calculatePriceRange);
+    const calculateButton = document.getElementById('calculate-button');
+    if (calculateButton) {
+        console.log('Calculate button found. Adding event listener.');
+        calculateButton.addEventListener('click', calculatePriceRange);
+    } else {
+        console.error('Calculate button not found in DOM');
+    }
 });
