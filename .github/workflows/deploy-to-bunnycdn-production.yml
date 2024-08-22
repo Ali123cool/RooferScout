@@ -16,18 +16,6 @@ jobs:
     - name: Upload new files to Production folder on BunnyCDN using HTTP API
       run: |
         for file in $(find ./Webflow-CustomCode/ -type f); do
-          echo "Uploading $file to BunnyCDN with Cache-Control header"
-          curl -X PUT \
-            --url "https://la.storage.bunnycdn.com/rooferscout-storagezone/Production/${file#./Webflow-CustomCode/}" \
-            --header "AccessKey: ${{ secrets.BUNNY_API_KEY_STORAGE }}" \
-            --header "Cache-Control: no-cache, no-store, must-revalidate" \
-            --header "Content-Type: application/octet-stream" \
-            --upload-file "$file" || exit 1;
-        done
-
-    - name: Upload new files to Production folder on BunnyCDN using HTTP API
-      run: |
-        for file in $(find ./Webflow-CustomCode/ -type f); do
           filename=$(basename "$file")
           echo "Uploading $filename to BunnyCDN with Cache-Control header"
           curl -X PUT \
@@ -36,4 +24,16 @@ jobs:
             --header "Cache-Control: no-cache, no-store, must-revalidate" \
             --header "Content-Type: application/octet-stream" \
             --upload-file "$file" || exit 1;
+        done
+
+    - name: Purge BunnyCDN Cache for Updated Files
+      run: |
+        for file in $(find ./Webflow-CustomCode/ -type f); do
+          filename=$(basename "$file")
+          PURGE_URL="https://api.bunny.net/purge?url=https%3A%2F%2FRooferScout-PullZone.b-cdn.net%2FProduction%2F$filename&async=false"
+          echo "Purging cache for $filename"
+          RESPONSE=$(curl -v --request POST \
+            --url "$PURGE_URL" \
+            --header "AccessKey: ${{ secrets.BUNNY_API_KEY }}")
+          echo "Purge response: $RESPONSE"
         done
