@@ -74,21 +74,58 @@ async function calculatePrice() {
 
 function clearFields() {
     console.log('Clearing fields...');
-    // Clear the price fields and the hidden fields
-    document.getElementById('min-price').innerText = '';
-    document.getElementById('max-price').innerText = '';
-    document.getElementById('min-price-field').value = '';
-    document.getElementById('max-price-field').value = '';
-    document.getElementById('quote-id').value = '';
+
+    const minPriceField = document.getElementById('min-price-field');
+    const maxPriceField = document.getElementById('max-price-field');
+    const quoteIdField = document.getElementById('quote-id');
+
+    if (minPriceField) {
+        minPriceField.value = '';
+    }
+    if (maxPriceField) {
+        maxPriceField.value = '';
+    }
+    if (quoteIdField) {
+        quoteIdField.value = '';
+    }
+
+    const minPriceDisplay = document.getElementById('min-price');
+    const maxPriceDisplay = document.getElementById('max-price');
+
+    if (minPriceDisplay) {
+        minPriceDisplay.innerText = '';
+    }
+    if (maxPriceDisplay) {
+        maxPriceDisplay.innerText = '';
+    }
 }
 
 function displayPrices(minPrice, maxPrice) {
     console.log('Displaying prices...');
-    document.getElementById('min-price').innerText = `${minPrice}`;
-    document.getElementById('max-price').innerText = `${maxPrice}`;
-    document.getElementById('min-price-field').value = minPrice;
-    document.getElementById('max-price-field').value = maxPrice;
-    document.getElementById('quote-id').value = generateRandomString(32);
+
+    const minPriceField = document.getElementById('min-price-field');
+    const maxPriceField = document.getElementById('max-price-field');
+    const quoteIdField = document.getElementById('quote-id');
+
+    if (minPriceField) {
+        minPriceField.value = minPrice;
+    }
+    if (maxPriceField) {
+        maxPriceField.value = maxPrice;
+    }
+    if (quoteIdField) {
+        quoteIdField.value = generateRandomString(32);
+    }
+
+    const minPriceDisplay = document.getElementById('min-price');
+    const maxPriceDisplay = document.getElementById('max-price');
+
+    if (minPriceDisplay) {
+        minPriceDisplay.innerText = `${minPrice}`;
+    }
+    if (maxPriceDisplay) {
+        maxPriceDisplay.innerText = `${maxPrice}`;
+    }
 }
 
 function generateRandomString(length) {
