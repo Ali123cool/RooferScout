@@ -30,7 +30,8 @@ jobs:
         for file in $(find ./Webflow-CustomCode/ -type f); do
           PURGE_URL="https://api.bunny.net/purge?url=https%3A%2F%2FRooferScout-PullZone.b-cdn.net%2FProduction%2F${file#./Webflow-CustomCode/}&async=false"
           echo "Purging cache for $file"
-          curl --request POST \
+          RESPONSE=$(curl --request POST \
             --url "$PURGE_URL" \
-            --header "AccessKey: ${{ secrets.BUNNY_API_KEY }}" || exit 1;
+            --header "AccessKey: ${{ secrets.BUNNY_API_KEY }}")
+          echo "Purge response: $RESPONSE"
         done

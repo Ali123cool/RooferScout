@@ -1,1 +1,1 @@
-console.log("alhamdulilah");
+console.log("alhamdulilah i love allah");
