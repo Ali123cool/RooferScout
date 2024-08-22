@@ -9,27 +9,22 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             console.log('Calculate button clicked.');
 
-            // Fetch Material Cost
-            const selectedMaterial = document.getElementById('Desired-Material-Type').value;
+            // Fetch entire Material Cost table
             const { data: materialData, error: materialError } = await supabase
                 .from('rooferscout_material_costs')
-                .select('min_cost, max_cost')
-                .eq('material_name', selectedMaterial);
+                .select('*');  // Select all columns
 
             if (materialError) {
                 throw new Error(`Material Error: ${materialError.message}`);
             }
             if (materialData && materialData.length > 0) {
-                console.log('Fetched Material Costs:', materialData[0]);
-                document.getElementById('result').innerText = `Min Cost: ${materialData[0].min_cost}, Max Cost: ${materialData[0].max_cost}`;
+                console.log('Fetched Material Costs:', materialData);
             } else {
                 console.log('No material data found.');
-                document.getElementById('result').innerText = 'No material data found.';
             }
 
         } catch (error) {
             console.error('Unexpected error:', error);
-            document.getElementById('result').innerText = 'An unexpected error occurred.';
         }
     });
 });
