@@ -13,18 +13,28 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Generate Version Number
-      id: version
-      run: echo "VERSION=$(date +%Y%m%d%H%M%S)" >> $GITHUB_ENV
-
-    - name: Update Version in HTML and JS
+    - name: Generate version number
       run: |
-        VERSION=${{ env.VERSION }}
-        # Update the version in the HTML file
-        sed -i "s|StartHereForm.js?v=[0-9]*|StartHereForm.js?v=$VERSION|g" ./Webflow-CustomCode/StartHereForm_WebflowCustomCode
+        VERSION=$(date +%Y%m%d%H%M%S)
+        echo "VERSION=$VERSION" >> $GITHUB_ENV
 
-        # Append the version number as a comment in the JS file
+    - name: Update version number in HTML
+      run: |
+        VERSION=$VERSION
+        sed -i "s|StartHereForm.js?v=[0-9]*|StartHereForm.js?v=$VERSION|g" ./Webflow-CustomCode/StartHereForm_WebflowCustomCode.html
+
+    - name: Append version number to JS file
+      run: |
         echo "\n// Version: $VERSION" >> ./Webflow-CustomCode/StartHereForm.js
+
+    - name: Commit changes
+      run: |
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "actions@github.com"
+        git add ./Webflow-CustomCode/StartHereForm_WebflowCustomCode.html
+        git add ./Webflow-CustomCode/StartHereForm.js
+        git commit -m "Updated version number to $VERSION"
+        git push
 
     - name: Upload new files to Production folder on BunnyCDN using HTTP API
       run: |
