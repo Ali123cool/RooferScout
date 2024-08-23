@@ -22,7 +22,7 @@ jobs:
       run: |
         VERSION=$VERSION
         # Update the path to reflect the correct directory (ROOFERSCOUT)
-        HTML_FILE_PATH="./ROOFERSCOUT/Webflow-CustomCode/StartHereForm_WebflowCustomCode.html"
+        HTML_FILE_PATH="ROOFERSCOUT/Webflow-CustomCode/StartHereForm_WebflowCustomCode.html"
         if [ -f "$HTML_FILE_PATH" ]; then
           sed -i "s|StartHereForm.js?v=[0-9]*|StartHereForm.js?v=$VERSION|g" "$HTML_FILE_PATH"
         else
@@ -33,20 +33,20 @@ jobs:
     - name: Append version number to JS file
       run: |
         # Adjust the path to the JS file to reflect the correct directory (ROOFERSCOUT)
-        echo "\n// Version: $VERSION" >> ./ROOFERSCOUT/Webflow-CustomCode/StartHereForm.js
+        echo "\n// Version: $VERSION" >> ROOFERSCOUT/Webflow-CustomCode/StartHereForm.js
 
     - name: Commit changes
       run: |
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
-        git add ./ROOFERSCOUT/Webflow-CustomCode/StartHereForm_WebflowCustomCode.html
-        git add ./ROOFERSCOUT/Webflow-CustomCode/StartHereForm.js
+        git add ROOFERSCOUT/Webflow-CustomCode/StartHereForm_WebflowCustomCode.html
+        git add ROOFERSCOUT/Webflow-CustomCode/StartHereForm.js
         git commit -m "Updated version number to $VERSION"
         git push
 
     - name: Upload new files to Production folder on BunnyCDN using HTTP API
       run: |
-        for file in $(find ./ROOFERSCOUT/Webflow-CustomCode/ -type f); do
+        for file in $(find ROOFERSCOUT/Webflow-CustomCode/ -type f); do
           filename=$(basename "$file")
           echo "Uploading $filename to BunnyCDN with Cache-Control header"
           curl -X PUT \
@@ -59,7 +59,7 @@ jobs:
 
     - name: Purge BunnyCDN Cache for Updated Files
       run: |
-        for file in $(find ./ROOFERSCOUT/Webflow-CustomCode/ -type f); do
+        for file in $(find ROOFERSCOUT/Webflow-CustomCode/ -type f); do
           filename=$(basename "$file")
           PURGE_URL="https://api.bunny.net/purge?url=https%3A%2F%2FRooferScout-PullZone.b-cdn.net%2FProduction%2F$filename&async=false"
           echo "Purging cache for $filename"
