@@ -15,15 +15,16 @@ jobs:
 
     - name: Generate Version Number
       id: version
-      run: |
-        VERSION=$(date +%Y%m%d%H%M%S) # Example: 20240822153000
-        echo "Generated version: $VERSION"
-        echo "VERSION=$VERSION" >> $GITHUB_ENV
+      run: echo "VERSION=$(date +%Y%m%d%H%M%S)" >> $GITHUB_ENV
 
-    - name: Update HTML File with Version Number
+    - name: Update Version in HTML and JS
       run: |
         VERSION=${{ env.VERSION }}
+        # Update the version in the HTML file
         sed -i "s|StartHereForm.js?v=[0-9]*|StartHereForm.js?v=$VERSION|g" ./Webflow-CustomCode/StartHereForm_WebflowCustomCode
+
+        # Append the version number as a comment in the JS file
+        echo "\n// Version: $VERSION" >> ./Webflow-CustomCode/StartHereForm.js
 
     - name: Upload new files to Production folder on BunnyCDN using HTTP API
       run: |
