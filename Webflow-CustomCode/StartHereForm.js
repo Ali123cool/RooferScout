@@ -186,10 +186,12 @@ async function submitFormToSupabase() {
         }
 
         console.log('Form data submitted successfully:', data);
+        console.log('Redirecting to the completion page...');
 
         // Redirect to completion page
-        window.location.href = 'https://roofer-scout.webflow.io/user-info-form/form-completion-page';
-
+        setTimeout(() => {
+            window.location.href = 'https://roofer-scout.webflow.io/user-info-form/form-completion-page';
+        }, 100);  // Slight delay
     } catch (error) {
         console.error('Error submitting form data:', error);
         // Show alert if the redirect fails
@@ -234,9 +236,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const submitButton = document.getElementById('Submit-Form-to-Supabase');
     if (submitButton) {
-        submitButton.addEventListener('click', (event) => {
+        submitButton.addEventListener('click', async (event) => {
             event.preventDefault(); // Prevent the default form submission behavior
-            submitFormToSupabase(); // Call the submit function
+            await submitFormToSupabase(); // Call the submit function
         });
     } else {
         console.error('Submit button not found!');
