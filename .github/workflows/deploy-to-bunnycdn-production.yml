@@ -13,6 +13,18 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
+    - name: Generate Version Number
+      id: version
+      run: |
+        VERSION=$(date +%Y%m%d%H%M%S) # Example: 20240822153000
+        echo "Generated version: $VERSION"
+        echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+    - name: Update HTML File with Version Number
+      run: |
+        VERSION=${{ env.VERSION }}
+        sed -i "s|StartHereForm.js?v=[0-9]*|StartHereForm.js?v=$VERSION|g" ./Webflow-CustomCode/StartHereForm_WebflowCustomCode
+
     - name: Upload new files to Production folder on BunnyCDN using HTTP API
       run: |
         for file in $(find ./Webflow-CustomCode/ -type f); do

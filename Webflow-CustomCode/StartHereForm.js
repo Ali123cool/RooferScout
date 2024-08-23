@@ -173,7 +173,8 @@ async function submitFormToSupabase() {
         'insurance_help_2': getValueById('Insurance-Help-2'),
         'quote_id': getValueById('quote-id'),
         'min_price_field': getValueById('min-price-field'),
-        'max_price_field': getValueById('max-price-field')
+        'max_price_field': getValueById('max-price-field'),
+        'damage_type': getValueById('Damage-Type')
     };
 
     try {
