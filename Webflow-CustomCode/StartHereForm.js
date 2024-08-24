@@ -192,10 +192,11 @@ async function submitFormToSupabase() {
 
         // Redirect to completion page
         setTimeout(() => {
-            window.location.href = 'https://roofer-scout.webflow.io/user-info-form/form-completion-page';
+            window.location.href = 'https://www.rooferscout.com/user-info-form/form-completion-page';
         }, 100);  // Slight delay
     } catch (error) {
-        console.error('Error submitting form data:', error);
+        console
+        error('Error submitting form data:', error);
         // Show alert if the redirect fails
         alert("Information submitted successfully! Please check your email for more updates.");
     }
