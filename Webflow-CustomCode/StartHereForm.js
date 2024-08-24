@@ -138,68 +138,63 @@ function generateRandomString(length) {
 }
 
 // Function to submit form data to Supabase
+// Format: 'supabase_column_name': document.getElementById('webflow_html_id').value
 async function submitFormToSupabase() {
-    // Format: 'supabase_column_name': document.getElementById('webflow_html_id').value
-    const formData = {
-        'first_name': getValueById('First-Name'),
-        'last_name': getValueById('Last-Name'),
-        'business_name': getValueById('Business-Name'),
-        'email': getValueById('Email'),
-        'phone_number': getValueById('Phone-Number'),
-        'call_allowed': getCheckedById('Call-Allowed'),
-        'text_allowed': getCheckedById('Text-Allowed'),
-        'email_allowed': getCheckedById('Email-Allowed'),
-        'tos': getCheckedById('TOS'),
-        'priv_pol': getCheckedById('Priv-Pol'),
-        'street_address': getValueById('Street-Address'),
-        'street_address_2': getValueById('Street-Address-2'),
-        'state': getValueById('State'),
-        'city': getValueById('City'),
-        'zip_code': getValueById('Zip-Code'),
-        'building_type': getValueById('Building-Type'),
-        'estimated_roof_sq_ft': getValueById('Estimated-Roof-Sq-Ft'),
-        'stories': getValueById('Stories'),
-        'roof_steepness': getRadioValueByName('Roof-Steepness'),
-        'type_of_service_desired': getValueById('Type-Of-Service-Desired'),
-        'current_material_type': getValueById('Current-Material-Type'),
-        'desired_material_type': getValueById('Desired-Material-Type'),
-        'additional_services': getSelectedOptionsById('Additional-Services'),
-        'specific_materials': getValueById('Specific-Materials'),
-        'additional_information': getValueById('Additional-Information'),
-        'will_you_be_using_insurance_2': getValueById('Will-You-Be-Using-Insurance-2'),
-        'insurance_company_2': getValueById('Insurance-Company-2'),
-        'policy_type_2': getValueById('Policy-Type-2'),
-        'started_claim_process_2': getValueById('Started-Claim-Process-2'),
-        'insurance_help_2': getValueById('Insurance-Help-2'),
-        'quote_id': getValueById('quote-id'),
-        'min_price_field': getValueById('min-price-field'),
-        'max_price_field': getValueById('max-price-field'),
-        'damage_type': getValueById('Damage-Type'),
-        'does_user_want_service_2': getValueById('Does-User-Want-Service-2')
-    };
-
     try {
-        const { data, error } = await supabase
-            .from('rooferscout_main_form_submission_v1')
-            .insert([formData]);
+        const formData = {
+            first_name: getValueById('First-Name'),
+            last_name: getValueById('Last-Name'),
+            business_name: getValueById('Business-Name'),
+            email: getValueById('Email'),
+            phone_number: getValueById('Phone-Number'),
+            call_allowed: getCheckedById('Call-Allowed'),
+            text_allowed: getCheckedById('Text-Allowed'),
+            email_allowed: getCheckedById('Email-Allowed'),
+            tos: getCheckedById('TOS'),
+            priv_pol: getCheckedById('Priv-Pol'),
+            street_address: getValueById('Street-Address'),
+            street_address_2: getValueById('Street-Address-2'),
+            state: getValueById('State'),
+            city: getValueById('City'),
+            zip_code: getValueById('Zip-Code'),
+            building_type: getValueById('Building-Type'),
+            estimated_roof_sq_ft: getValueById('Estimated-Roof-Sq-Ft'),
+            stories: getValueById('Stories'),
+            roof_steepness: getRadioValueByName('Roof-Steepness'),
+            type_of_service_desired: getValueById('Type-Of-Service-Desired'),
+            current_material_type: getValueById('Current-Material-Type'),
+            desired_material_type: getValueById('Desired-Material-Type'),
+            additional_services: getSelectedOptionsById('Additional-Services'),
+            specific_materials: getValueById('Specific-Materials'),
+            additional_information: getValueById('Additional-Information'),
+            will_you_be_using_insurance_2: getValueById('Will-You-Be-Using-Insurance-2'),
+            insurance_company_2: getValueById('Insurance-Company-2'),
+            policy_type_2: getValueById('Policy-Type-2'),
+            started_claim_process_2: getValueById('Started-Claim-Process-2'),
+            insurance_help_2: getValueById('Insurance-Help-2'),
+            quote_id: getValueById('quote-id'),
+            min_price_field: getValueById('min-price-field'),
+            max_price_field: getValueById('max-price-field'),
+            damage_type: getValueById('Damage-Type'),
+            does_user_want_service_2: getValueById('Does-User-Want-Service-2')
+        };
+
+        const { data, error } = await supabase.rpc('insert_form_data', formData);
 
         if (error) {
             throw error;
         }
 
         console.log('Form data submitted successfully:', data);
-        console.log('Redirecting to the completion page...');
-
-        // Redirect to completion page
         setTimeout(() => {
             window.location.href = 'https://rooferscout.com/user-info-form/form-completion-page';
-        }, 100);  // Slight delay
+        }, 100);
     } catch (error) {
         console.error('Error submitting form data:', error);
-        // Show alert if the redirect fails
-        alert("Information submitted successfully! Please check your email for more updates.");
+        alert("There was an error submitting the form.");
     }
 }
+    
 
 // Helper functions to safely retrieve values from elements
 function getValueById(id) {
