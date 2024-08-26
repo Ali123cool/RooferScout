@@ -3,10 +3,11 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 const supabaseUrl = 'https://wcpcigdzqcmxvzfpbazr.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndjcGNpZ2R6cWNteHZ6ZnBiYXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjQxODIzMDAsImV4cCI6MjAzOTc1ODMwMH0.0AtbcXKmjDZY-HSu235YDWY5qCyd0JQTwWxtv2MWX5A';
 const supabase = createClient(supabaseUrl, supabaseKey);
+const schemaName = 'public'; // Set your schema name here
 
 async function fetchData(table, column, value) {
     console.log(`Fetching data from ${table} where ${column} = ${value}`);
-    const { data, error } = await supabase.from(table).select('*').eq(column, value);
+    const { data, error } = await supabase.from(`${schemaName}.${table}`).select('*').eq(column, value);
     if (error) {
         throw new Error(`${table} Error: ${error.message}`);
     }
@@ -175,13 +176,14 @@ async function submitFormToSupabase() {
         'min_price_field': getValueById('min-price-field'),
         'max_price_field': getValueById('max-price-field'),
         'damage_type': getValueById('Damage-Type'),
-        'does_user_want_service_2': getValueById('Does-User-Want-Service-2')
+        'does_user_want_service_2': getValueById('Does-User-Want-Service-2'),
+        'timing_for_service': getValueById('Timing-For-Service')
     };
 
     try {
         // Attempt to insert the data into Supabase
         const { data, error } = await supabase
-            .from('rooferscout_main_form_submission_v1')
+            .from(`${schemaName}.rooferscout_main_form_submission_v1`)
             .insert([formData]);
 
         if (error) {
@@ -201,8 +203,6 @@ async function submitFormToSupabase() {
         alert("There was an issue submitting your form. Please try clearing your browser cache or using a different browser.");
     }
 }
-
-
 
 // Helper functions to safely retrieve values from elements
 function getValueById(id) {
