@@ -11,7 +11,7 @@ serve(async (req) => {
     const { name, email, additional_information, price } = await req.json();
 
     // Post the lead to Shopify
-    const response = await fetch(`${Deno.env.get("SHOPIFY_URL_1")}/admin/api/2023-04/products.json`, {
+    const response = await fetch(`${Deno.env.get("SHOPIFY_URL_1")}/admin/api/2024-07/products.json`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
