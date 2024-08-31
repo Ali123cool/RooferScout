@@ -37,12 +37,15 @@ serve(async (req) => {
       time_posted
     } = newRecord;
 
+    // Replace \n with <br> tags for HTML formatting
+    const formattedDescription = product_description.replace(/\n/g, '<br>');
+
     // Create product mutation
     const mutation = `
       mutation {
         productCreate(input: {
           title: "${product_title}",
-          descriptionHtml: "${product_description}",
+          descriptionHtml: "${formattedDescription}",
           vendor: "${product_vendor}",
           productType: "${product_type}",
           tags: ["${client_city}", "${client_state}", "${industry}"],
