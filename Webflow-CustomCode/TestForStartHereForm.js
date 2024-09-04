@@ -1,1 +1,0 @@
-console.log("alhamdulilah i love allah times 10000000000");
