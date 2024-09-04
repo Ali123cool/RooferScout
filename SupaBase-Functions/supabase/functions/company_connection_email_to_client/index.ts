@@ -1,29 +1,30 @@
 import { serve } from "https://deno.land/std/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { sendEmail } from "./sendEmail.js";  // Assuming you create a sendEmail module for Brevo
 
 // Initialize Supabase Client
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Use the secret for Brevo API key
+// Brevo API Key
 const brevoApiKey = Deno.env.get("BREVO_API_KEY_ROOFERSCOUT_1")!;
 
-// Function to send email using Brevo
-async function sendEmail({ apiKey, to, sender, subject, content }) {
-    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+// Function to send email using Brevo API
+async function sendEmail({ to, sender, subject, content }) {
+    const brevoUrl = "https://api.brevo.com/v3/smtp/email";
+
+    const response = await fetch(brevoUrl, {
         method: "POST",
         headers: {
+            Authorization: `Bearer ${brevoApiKey}`,
             "Content-Type": "application/json",
-            "api-key": apiKey
         },
         body: JSON.stringify({
             sender,
             to: [{ email: to }],
-            subject: subject,
-            htmlContent: `<html><body>${content}</body></html>`
-        })
+            subject,
+            htmlContent: `<html><body>${content}</body></html>`,
+        }),
     });
 
     if (response.ok) {
@@ -95,11 +96,10 @@ async function handleRequest(req) {
         `;
 
         const emailSent = await sendEmail({
-            apiKey: brevoApiKey,
             to: clientData.email,
             sender: {
                 name: senderData.brevo_sender_name,
-                email: senderData.brevo_email
+                email: senderData.brevo_email,
             },
             subject: "You've been paired with a company for your needs",
             content: emailContent,

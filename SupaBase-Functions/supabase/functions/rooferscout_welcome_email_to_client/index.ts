@@ -31,6 +31,7 @@ serve(async (req) => {
 
         const brevoUrl = "https://api.brevo.com/v3/smtp/email";
 
+        // Email sending logic directly inside the function
         const response = await fetch(brevoUrl, {
             method: "POST",
             headers: {
