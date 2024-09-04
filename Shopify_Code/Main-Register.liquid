@@ -1,0 +1,154 @@
+{{ 'customer.css' | asset_url | stylesheet_tag }}
+
+{%- style -%}
+  .section-{{ section.id }}-padding {
+    padding-top: {{ section.settings.padding_top | times: 0.75 | round: 0 }}px;
+    padding-bottom: {{ section.settings.padding_bottom }}px;
+  }
+
+  @media screen and (min-width: 750px) {
+    .section-{{ section.id }}-padding {
+      padding-top: {{ section.settings.padding_top }}px;
+      padding-bottom: {{ section.settings.padding_bottom }}px;
+    }
+  }
+
+  .static-message {
+    color: #d9534f;
+    font-size: 1em;
+    margin-top: 10px;
+    margin-bottom: 20px;
+  }
+
+  .checkbox-label {
+    display: flex;
+    align-items: center;
+    font-size: 1.2em;
+  }
+
+  .checkbox-label input[type="checkbox"] {
+    margin-right: 10px;
+    width: 20px;
+    height: 20px;
+  }
+{%- endstyle -%}
+
+<div class="customer register section-{{ section.id }}-padding">
+  <h1>
+    {{ 'customer.register.title' | t }}
+  </h1>
+
+  <!-- Static message -->
+  <div class="static-message">
+    All fields are required. Please fill out the form completely.
+  </div>
+
+  {%- form 'create_customer', novalidate: 'novalidate', id: 'RegisterForm' -%}
+
+    <!-- First Name Field -->
+    <div class="field">
+      <input
+        type="text"
+        name="customer[first_name]"
+        id="RegisterForm-FirstName"
+        autocomplete="given-name"
+        placeholder="{{ 'customer.register.first_name' | t }}"
+        required
+      >
+      <label for="RegisterForm-FirstName">
+        {{ 'customer.register.first_name' | t }}
+      </label>
+    </div>
+
+    <!-- Last Name Field -->
+    <div class="field">
+      <input
+        type="text"
+        name="customer[last_name]"
+        id="RegisterForm-LastName"
+        autocomplete="family-name"
+        placeholder="{{ 'customer.register.last_name' | t }}"
+        required
+      >
+      <label for="RegisterForm-LastName">
+        {{ 'customer.register.last_name' | t }}
+      </label>
+    </div>
+
+    <!-- Email Field -->
+    <div class="field">
+      <input
+        type="email"
+        name="customer[email]"
+        id="RegisterForm-email"
+        spellcheck="false"
+        autocapitalize="off"
+        autocomplete="email"
+        placeholder="{{ 'customer.register.email' | t }}"
+        required
+      >
+      <label for="RegisterForm-email">
+        {{ 'customer.register.email' | t }}
+      </label>
+    </div>
+
+    <!-- Company Agent Phone Number Field -->
+    <div class="field">
+      <input
+        type="text"
+        name="customer[note][Phone Number]"
+        id="RegisterForm-PhoneNumber"
+        placeholder="Phone Number"
+        required
+      >
+      <label for="RegisterForm-PhoneNumber">Phone Number</label>
+    </div>
+
+    <!-- Password Field -->
+    <div class="field">
+      <input
+        type="password"
+        name="customer[password]"
+        id="RegisterForm-password"
+        placeholder="{{ 'customer.register.password' | t }}"
+        required
+      >
+      <label for="RegisterForm-password">
+        {{ 'customer.register.password' | t }}
+      </label>
+    </div>
+
+    <!-- Company Name Field -->
+    <div class="field">
+      <input
+        type="text"
+        name="customer[note][Company Name]"
+        id="RegisterForm-CompanyName"
+        placeholder="Company Name"
+        required
+      >
+      <label for="RegisterForm-CompanyName">Company Name</label>
+    </div>
+
+    <!-- Do you have the correct docs Checkbox -->
+    <div class="checkbox-container" style="margin-top: 20px; display: flex; align-items: center;">
+      <input
+        type="checkbox"
+        id="RegisterForm-HasDocs"
+        name="customer[note][Has Documentation]"
+        required
+        style="margin-right: 10px; width: 16px; height: 16px;"
+        value="Yes"
+      >
+      <label for="RegisterForm-HasDocs" style="font-size: 16px;">
+        Do you possess the necessary documentation, such as insurance and business licenses, required to operate in the location where you intend to purchase leads?
+      </label>
+    </div>
+
+    <!-- Submit Button -->
+    <button type="submit">
+      {{ 'customer.register.submit' | t }}
+    </button>
+
+  {%- endform -%}
+</div>
