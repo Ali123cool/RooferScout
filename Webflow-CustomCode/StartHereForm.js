@@ -1,17 +1,54 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
-const supabaseUrl = 'https://wcpcigdzqcmxvzfpbazr.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndjcGNpZ2R6cWNteHZ6ZnBiYXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjQxODIzMDAsImV4cCI6MjAzOTc1ODMwMH0.0AtbcXKmjDZY-HSu235YDWY5qCyd0JQTwWxtv2MWX5A';
-const supabase = createClient(supabaseUrl, supabaseKey);
-const schemaName = 'public'; // Set your schema name here
+
+// Function to fetch Supabase URL and anon key from the Edge Function
+async function getSupabaseKeys() {
+    const response = await fetch('https://your-supabase-edge-function-url.supabase.co/fetch-supabase-keys');
+    if (!response.ok) {
+        throw new Error('Failed to fetch Supabase keys');
+    }
+    return response.json();
+}
+
+// Initialize Supabase dynamically after fetching the URL and key
+async function initSupabase() {
+    try {
+        const { supabaseUrl, supabaseAnonKey } = await getSupabaseKeys();
+        const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+        // Now you can use the `supabase` instance for database operations
+        // Example: fetch data from a table
+        const { data, error } = await supabase.from('your_table').select('*');
+        if (error) {
+            console.error('Error fetching data:', error);
+        } else {
+            console.log('Data fetched:', data);
+        }
+    } catch (error) {
+        console.error('Error initializing Supabase:', error);
+    }
+}
+
+// Call the function to initialize Supabase
+initSupabase();
+
+
+// Public schema for form submission
+const publicSchema = 'public';
+// RooferScout_Calculations schema for calculations
+const calculationsSchema = 'RooferScout_Calculations';
+
 
 async function fetchData(table, column, value) {
-    console.log(`Fetching data from ${table} where ${column} = ${value}`);
-    const { data, error } = await supabase.from(`${schemaName}.${table}`).select('*').eq(column, value);
+    // Determine the schema based on the table
+    const schema = table === 'rooferscout_main_form_submission_v1' ? publicSchema : calculationsSchema;
+
+    console.log(Fetching data from ${schema}.${table} where ${column} = ${value});
+    const { data, error } = await supabase.from(${schema}.${table}).select('*').eq(column, value);
     if (error) {
-        throw new Error(`${table} Error: ${error.message}`);
+        throw new Error(${table} Error: ${error.message});
     }
-    console.log(`Data from ${table}: `, data);
+    console.log(Data from ${table}: , data);
     return data.length > 0 ? data[0] : null;
 }
 
@@ -122,10 +159,10 @@ function displayPrices(minPrice, maxPrice) {
     const maxPriceDisplay = document.getElementById('max-price');
 
     if (minPriceDisplay) {
-        minPriceDisplay.innerText = `${minPrice}`;
+        minPriceDisplay.innerText = ${minPrice};
     }
     if (maxPriceDisplay) {
-        maxPriceDisplay.innerText = `${maxPrice}`;
+        maxPriceDisplay.innerText = ${maxPrice};
     }
 }
 
@@ -139,7 +176,6 @@ function generateRandomString(length) {
 }
 
 // Function to submit form data to Supabase
-// Format: 'supabase_column_name': document.getElementById('webflow_html_id').value
 async function submitFormToSupabase() {
     const formData = {
         'first_name': getValueById('First-Name'),
@@ -181,9 +217,9 @@ async function submitFormToSupabase() {
     };
 
     try {
-        // Attempt to insert the data into Supabase
+        // Attempt to insert the data into Supabase (using public schema for form submission)
         const { data, error } = await supabase
-            .from(`${schemaName}.rooferscout_main_form_submission_v1`)
+            .from('public.rooferscout_main_form_submission_v1')
             .insert([formData]);
 
         if (error) {
@@ -216,7 +252,7 @@ function getCheckedById(id) {
 }
 
 function getRadioValueByName(name) {
-    const element = document.querySelector(`input[name="${name}"]:checked`);
+    const element = document.querySelector(input[name="${name}"]:checked);
     return element ? element.value : '';
 }
 
