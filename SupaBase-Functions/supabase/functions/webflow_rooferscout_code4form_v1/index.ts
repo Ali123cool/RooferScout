@@ -27,36 +27,9 @@ async function fetchData(table: string, column: string, value: string, schema: s
     }
 }
 
-// Function to clear price fields before recalculation
-function clearPriceFields() {
-    const minPriceElement = document.getElementById('min-price');
-    const maxPriceElement = document.getElementById('max-price');
-
-    if (minPriceElement) {
-        minPriceElement.innerText = ''; // Clear min-price
-    }
-
-    if (maxPriceElement) {
-        maxPriceElement.innerText = ''; // Clear max-price
-    }
-}
-
-// Function to set cursor to loading (spinner)
-function showLoadingCursor() {
-    document.body.style.cursor = 'wait'; // Set cursor to loading
-}
-
-// Function to reset cursor to default
-function resetCursor() {
-    document.body.style.cursor = 'default'; // Reset cursor to default
-}
-
 // Function to calculate the price
 async function calculatePrice(formData: Record<string, any>) {
     try {
-        clearPriceFields(); // Clear previous price fields
-        showLoadingCursor(); // Show loading cursor
-
         const {
             selectedMaterial,
             selectedServiceType,
@@ -88,16 +61,10 @@ async function calculatePrice(formData: Record<string, any>) {
             (materialData.max_cost * serviceTypeData.factor * stateData.factor * buildingTypeData.factor + storiesData.cost + steepnessData.cost)
         );
 
-        // Insert the new prices into the fields
-        document.getElementById('min-price').innerText = minPrice.toString();
-        document.getElementById('max-price').innerText = maxPrice.toString();
-
         return { minPrice, maxPrice };
     } catch (error) {
         console.error('calculatePrice error:', error.message);
         throw error;
-    } finally {
-        resetCursor(); // Reset cursor back to default after calculation
     }
 }
 
