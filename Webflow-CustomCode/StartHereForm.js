@@ -1,9 +1,8 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
-
 // Function to fetch Supabase URL and anon key from the Edge Function
 async function getSupabaseKeys() {
-    const response = await fetch('https://your-supabase-edge-function-url.supabase.co/fetch-supabase-keys');
+    const response = await fetch('https://wcpcigdzqcmxvzfpbazr.supabase.co/functions/v1/fetch_supabase_keys');
     if (!response.ok) {
         throw new Error('Failed to fetch Supabase keys');
     }
@@ -24,31 +23,28 @@ async function initSupabase() {
         } else {
             console.log('Data fetched:', data);
         }
+
+        return supabase;  // Return the supabase instance for further use
     } catch (error) {
         console.error('Error initializing Supabase:', error);
     }
 }
-
-// Call the function to initialize Supabase
-initSupabase();
-
 
 // Public schema for form submission
 const publicSchema = 'public';
 // RooferScout_Calculations schema for calculations
 const calculationsSchema = 'RooferScout_Calculations';
 
-
-async function fetchData(table, column, value) {
+async function fetchData(supabase, table, column, value) {
     // Determine the schema based on the table
     const schema = table === 'rooferscout_main_form_submission_v1' ? publicSchema : calculationsSchema;
 
-    console.log(Fetching data from ${schema}.${table} where ${column} = ${value});
-    const { data, error } = await supabase.from(${schema}.${table}).select('*').eq(column, value);
+    console.log(`Fetching data from ${schema}.${table} where ${column} = ${value}`);
+    const { data, error } = await supabase.from(`${schema}.${table}`).select('*').eq(column, value);
     if (error) {
-        throw new Error(${table} Error: ${error.message});
+        throw new Error(`${table} Error: ${error.message}`);
     }
-    console.log(Data from ${table}: , data);
+    console.log(`Data from ${table}: `, data);
     return data.length > 0 ? data[0] : null;
 }
 
@@ -57,6 +53,8 @@ async function calculatePrice() {
         clearFields(); // Clear the fields before calculation
         document.body.style.cursor = 'wait'; // Change cursor to spinner
         console.log('Calculate button clicked.');
+
+        const supabase = await initSupabase(); // Ensure Supabase is initialized
 
         const selectedMaterial = document.getElementById('Desired-Material-Type').value;
         const selectedServiceType = document.getElementById('Type-Of-Service-Desired').value;
@@ -77,13 +75,13 @@ async function calculatePrice() {
             selectedSteepness
         });
 
-        const materialData = await fetchData('rooferscout_material_costs', 'material_name', selectedMaterial);
-        const serviceTypeData = await fetchData('rooferscout_service_type_factors', 'service_type', selectedServiceType);
-        const stateData = await fetchData('rooferscout_state_factors', 'state_name', selectedState);
-        const storiesData = await fetchData('rooferscout_stories_costs', 'stories_count', selectedStories);
-        const buildingTypeData = await fetchData('rooferscout_building_type_factors', 'building_type', selectedBuildingType);
-        const roofSqFtData = await fetchData('rooferscout_estimated_roof_sq_ft', 'range_label', selectedRoofSqFt);
-        const steepnessData = await fetchData('rooferscout_steepness_costs', 'steepness_level', selectedSteepness);
+        const materialData = await fetchData(supabase, 'rooferscout_material_costs', 'material_name', selectedMaterial);
+        const serviceTypeData = await fetchData(supabase, 'rooferscout_service_type_factors', 'service_type', selectedServiceType);
+        const stateData = await fetchData(supabase, 'rooferscout_state_factors', 'state_name', selectedState);
+        const storiesData = await fetchData(supabase, 'rooferscout_stories_costs', 'stories_count', selectedStories);
+        const buildingTypeData = await fetchData(supabase, 'rooferscout_building_type_factors', 'building_type', selectedBuildingType);
+        const roofSqFtData = await fetchData(supabase, 'rooferscout_estimated_roof_sq_ft', 'range_label', selectedRoofSqFt);
+        const steepnessData = await fetchData(supabase, 'rooferscout_steepness_costs', 'steepness_level', selectedSteepness);
 
         // Check if any of the required data is missing
         if (!materialData || !serviceTypeData || !stateData || !storiesData || !buildingTypeData || !roofSqFtData || !steepnessData) {
@@ -159,10 +157,10 @@ function displayPrices(minPrice, maxPrice) {
     const maxPriceDisplay = document.getElementById('max-price');
 
     if (minPriceDisplay) {
-        minPriceDisplay.innerText = ${minPrice};
+        minPriceDisplay.innerText = `${minPrice}`;
     }
     if (maxPriceDisplay) {
-        maxPriceDisplay.innerText = ${maxPrice};
+        maxPriceDisplay.innerText = `${maxPrice}`;
     }
 }
 
@@ -217,6 +215,8 @@ async function submitFormToSupabase() {
     };
 
     try {
+        const supabase = await initSupabase(); // Ensure Supabase is initialized
+
         // Attempt to insert the data into Supabase (using public schema for form submission)
         const { data, error } = await supabase
             .from('public.rooferscout_main_form_submission_v1')
@@ -252,7 +252,7 @@ function getCheckedById(id) {
 }
 
 function getRadioValueByName(name) {
-    const element = document.querySelector(input[name="${name}"]:checked);
+    const element = document.querySelector(`input[name="${name}"]:checked`);
     return element ? element.value : '';
 }
 
