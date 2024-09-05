@@ -1,113 +1,195 @@
 <script>
-    async function sendRequestToEdge(action, formData) {
-        try {
-            const response = await fetch('https://wcpcigdzqcmxvzfpbazr.supabase.co/functions/v1/webflow_rooferscout_code4form_v1', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action, formData })
-            });
-    
-            if (!response.ok) {
-                console.error("Error sending request to Edge Function:", await response.text());
-                return null;
-            }
-    
-            return await response.json();
-        } catch (error) {
-            console.error("Error in sendRequestToEdge:", error);
-            return null;
-        }
+  // Function to calculate price and log all the values used in the calculation
+  async function calculatePrice() {
+    try {
+      clearFields(); // Clear fields before calculation
+      document.body.style.cursor = 'wait'; // Show spinner
+
+      // Collecting all form data used in the calculation
+      const selectedMaterial = document.getElementById('Desired-Material-Type').value;
+      const selectedServiceType = document.getElementById('Type-Of-Service-Desired').value;
+      const selectedState = document.getElementById('State').value;
+      const selectedStories = document.getElementById('Stories').value;
+      const selectedBuildingType = document.getElementById('Building-Type').value;
+      const selectedRoofSqFt = document.getElementById('Estimated-Roof-Sq-Ft').value;
+      const selectedSteepness = document.querySelector('input[name="Roof-Steepness"]:checked').value;
+
+      // Log all the field values used in the calculation
+      console.log('Values used in the calculation:', {
+        selectedMaterial,
+        selectedServiceType,
+        selectedState,
+        selectedStories,
+        selectedBuildingType,
+        selectedRoofSqFt,
+        selectedSteepness
+      });
+
+      // Send data to the backend to perform the price calculation
+      const formData = {
+        selectedMaterial,
+        selectedServiceType,
+        selectedState,
+        selectedStories,
+        selectedBuildingType,
+        selectedRoofSqFt,
+        selectedSteepness
+      };
+
+      const response = await fetch('https://wcpcigdzqcmxvzfpbazr.supabase.co/functions/v1/webflow_rooferscout_calculate_estimate_v1', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.message || 'Error calculating price');
+      }
+
+      // Display prices and update hidden fields
+      displayPrices(result.minPrice, result.maxPrice);
+
+    } catch (error) {
+      console.error('Error calculating price:', error);
+    } finally {
+      document.body.style.cursor = 'default'; // Reset cursor
     }
-    
-    async function calculatePrice() {
-        try {
-            // Show loading cursor
-            document.body.style.cursor = 'wait';
-    
-            // Clear previous values from min-price and max-price elements
-            const minPriceElement = document.getElementById('min-price');
-            const maxPriceElement = document.getElementById('max-price');
-            if (minPriceElement) minPriceElement.innerText = '';
-            if (maxPriceElement) maxPriceElement.innerText = '';
-    
-            const formData = {
-                selectedMaterial: document.getElementById('Desired-Material-Type').value,
-                selectedServiceType: document.getElementById('Type-Of-Service-Desired').value,
-                selectedState: document.getElementById('State').value,
-                selectedStories: document.getElementById('Stories').value,
-                selectedBuildingType: document.getElementById('Building-Type').value,
-                selectedRoofSqFt: document.getElementById('Estimated-Roof-Sq-Ft').value,
-                selectedSteepness: document.querySelector('input[name="Roof-Steepness"]:checked').value,
-            };
-    
-            const prices = await sendRequestToEdge('calculatePrice', formData);
-            if (prices) {
-                document.getElementById('min-price').innerText = prices.minPrice;
-                document.getElementById('max-price').innerText = prices.maxPrice;
-            } else {
-                console.error("Failed to retrieve prices.");
-            }
-    
-        } catch (error) {
-            console.error("Error calculating price:", error);
-        } finally {
-            // Reset the cursor to default after the operation completes
-            document.body.style.cursor = 'default';
-        }
-    }
-    
-    async function submitFormToSupabase() {
-        try {
-            const formData = {
-                'first_name': document.getElementById('First-Name').value,
-                'last_name': document.getElementById('Last-Name').value,
-                'business_name': document.getElementById('Business-Name').value,
-                'email': document.getElementById('Email').value,
-                'phone_number': document.getElementById('Phone-Number').value,
-                'street_address': document.getElementById('Street-Address').value,
-                'state': document.getElementById('State').value,
-                'zip_code': document.getElementById('Zip-Code').value,
-                'roof_steepness': document.querySelector('input[name="Roof-Steepness"]:checked').value,
-                'estimated_roof_sq_ft': document.getElementById('Estimated-Roof-Sq-Ft').value,
-                'desired_material_type': document.getElementById('Desired-Material-Type').value,
-                'type_of_service_desired': document.getElementById('Type-Of-Service-Desired').value,
-            };
-    
-            const result = await sendRequestToEdge('submitForm', formData);
-            if (result && result.success) {
-                window.location.href = 'https://rooferscout.com/user-info-form/form-completion-page';
-            } else {
-                alert("Error submitting form.");
-            }
-    
-        } catch (error) {
-            console.error("Error submitting form:", error);
-            alert("There was an issue submitting your form.");
-        }
-    }
-    
-    // Event listeners
-    document.addEventListener('DOMContentLoaded', () => {
-        const calculateButton = document.getElementById('calculate-button');
-        const submitButton = document.getElementById('Submit-Form-to-Supabase');
-    
-        if (calculateButton) {
-            calculateButton.addEventListener('click', (event) => {
-                event.preventDefault();
-                calculatePrice();
-            });
-        } else {
-            console.error('Calculate button not found.');
-        }
-    
-        if (submitButton) {
-            submitButton.addEventListener('click', async (event) => {
-                event.preventDefault();  // Prevent the default form submission behavior
-                await submitFormToSupabase();  // Call the submit function
-            });
-        } else {
-            console.error('Submit button not found.');
-        }
+  }
+
+  // Log all form fields and their values, types, and IDs on form submission
+  async function submitFormToSupabase() {
+    const formData = {
+      'first_name': getValueById('First-Name'),
+      'last_name': getValueById('Last-Name'),
+      'business_name': getValueById('Business-Name'),
+      'email': getValueById('Email'),
+      'phone_number': getValueById('Phone-Number'),
+      'call_allowed': getCheckedById('Call-Allowed'),
+      'text_allowed': getCheckedById('Text-Allowed'),
+      'email_allowed': getCheckedById('Email-Allowed'),
+      'tos': getCheckedById('TOS'),
+      'priv_pol': getCheckedById('Priv-Pol'),
+      'street_address': getValueById('Street-Address'),
+      'street_address_2': getValueById('Street-Address-2'),
+      'state': getValueById('State'),
+      'city': getValueById('City'),
+      'zip_code': getValueById('Zip-Code'),
+      'building_type': getValueById('Building-Type'),
+      'estimated_roof_sq_ft': getValueById('Estimated-Roof-Sq-Ft'),
+      'stories': getValueById('Stories'),
+      'roof_steepness': getRadioValueByName('Roof-Steepness'),
+      'type_of_service_desired': getValueById('Type-Of-Service-Desired'),
+      'current_material_type': getValueById('Current-Material-Type'),
+      'desired_material_type': getValueById('Desired-Material-Type'),
+      'additional_services': getSelectedOptionsById('Additional-Services'),
+      'specific_materials': getValueById('Specific-Materials'),
+      'additional_information': getValueById('Additional-Information'),
+      'will_you_be_using_insurance_2': getValueById('Will-You-Be-Using-Insurance-2'),
+      'insurance_company_2': getValueById('Insurance-Company-2'),
+      'policy_type_2': getValueById('Policy-Type-2'),
+      'started_claim_process_2': getValueById('Started-Claim-Process-2'),
+      'insurance_help_2': getValueById('Insurance-Help-2'),
+      'quote_id': getValueById('quote-id'),
+      'min_price_field': getValueById('min-price-field'),
+      'max_price_field': getValueById('max-price-field'),
+      'damage_type': getValueById('Damage-Type'),
+      'does_user_want_service_2': getValueById('Does-User-Want-Service-2'),
+      'timing_for_service': getValueById('Timing-For-Service')
+    };
+
+    // Log all field data, including values, types, and field IDs
+    console.log('Form Data Submission:');
+    Object.keys(formData).forEach((fieldId) => {
+      const element = document.getElementById(fieldId);
+      const fieldType = element ? element.type : 'unknown';
+      const fieldValue = formData[fieldId];
+      console.log(`Field ID: ${fieldId}, Type: ${fieldType}, Value: ${fieldValue}`);
     });
-    </script>
-    
+
+    try {
+      const response = await fetch('https://wcpcigdzqcmxvzfpbazr.supabase.co/functions/v1/webflow_rooferscout_insert_into_sb_v1', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.message || 'Error submitting form');
+      }
+
+      // Redirect to a completion page
+      setTimeout(() => {
+        window.location.href = 'https://rooferscout.com/user-info-form/form-completion-page';
+      }, 100);
+
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      alert("There was an issue submitting your form. Please try again.");
+    }
+  }
+
+  // Attach the event listeners to buttons for calculate and submit actions
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('calculate-button').addEventListener('click', (event) => {
+      event.preventDefault();
+      calculatePrice();
+    });
+
+    document.getElementById('Submit-Form-to-Supabase').addEventListener('click', (event) => {
+      event.preventDefault();
+      submitFormToSupabase();
+    });
+  });
+
+  // Helper functions
+  function getValueById(id) {
+    const element = document.getElementById(id);
+    return element ? element.value : '';
+  }
+
+  function getCheckedById(id) {
+    const element = document.getElementById(id);
+    return element ? element.checked : false;
+  }
+
+  function getRadioValueByName(name) {
+    const element = document.querySelector(`input[name="${name}"]:checked`);
+    return element ? element.value : '';
+  }
+
+  function getSelectedOptionsById(id) {
+    const element = document.getElementById(id);
+    return element ? Array.from(element.selectedOptions).map(opt => opt.value) : [];
+  }
+
+  function clearFields() {
+    document.getElementById('min-price-field').value = '';
+    document.getElementById('max-price-field').value = '';
+    document.getElementById('quote-id').value = '';
+    document.getElementById('min-price').innerText = '';
+    document.getElementById('max-price').innerText = '';
+  }
+
+  function displayPrices(minPrice, maxPrice) {
+    document.getElementById('min-price-field').value = minPrice;
+    document.getElementById('max-price-field').value = maxPrice;
+    document.getElementById('quote-id').value = generateRandomString(32);
+    document.getElementById('min-price').innerText = `${minPrice}`;
+    document.getElementById('max-price').innerText = `${maxPrice}`;
+  }
+
+  function generateRandomString(length) {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+    for (let i = 0; i < length; i++) {
+      result += characters.charAt(Math.floor(Math.random() * characters.length));
+    }
+    return result;
+  }
+</script>

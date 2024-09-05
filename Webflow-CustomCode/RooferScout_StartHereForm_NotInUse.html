@@ -1,0 +1,290 @@
+<script>
+
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+
+// Function to fetch Supabase URL and anon key from the Edge Function
+async function getSupabaseKeys() {
+    const response = await fetch('https://wcpcigdzqcmxvzfpbazr.supabase.co/functions/v1/fetch_supabase_keys');
+    if (!response.ok) {
+        throw new Error('Failed to fetch Supabase keys');
+    }
+    return response.json();
+}
+
+// Initialize Supabase dynamically after fetching the URL and key
+async function initSupabase() {
+    try {
+        const { supabaseUrl, supabaseAnonKey } = await getSupabaseKeys();
+        const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+        // Now you can use the `supabase` instance for database operations
+        // Example: fetch data from a table
+        const { data, error } = await supabase.from('your_table').select('*');
+        if (error) {
+            console.error('Error fetching data:', error);
+        } else {
+            console.log('Data fetched:', data);
+        }
+
+        return supabase;  // Return the supabase instance for further use
+    } catch (error) {
+        console.error('Error initializing Supabase:', error);
+    }
+}
+
+// Public schema for form submission
+const publicSchema = 'public';
+// RooferScout_Calculations schema for calculations
+const calculationsSchema = 'RooferScout_Calculations';
+
+async function fetchData(supabase, table, column, value) {
+    // Determine the schema based on the table
+    const schema = table === 'rooferscout_main_form_submission_v1' ? publicSchema : calculationsSchema;
+
+    console.log(`Fetching data from ${schema}.${table} where ${column} = ${value}`);
+    const { data, error } = await supabase.from(`${schema}.${table}`).select('*').eq(column, value);
+    if (error) {
+        throw new Error(`${table} Error: ${error.message}`);
+    }
+    console.log(`Data from ${table}: `, data);
+    return data.length > 0 ? data[0] : null;
+}
+
+async function calculatePrice() {
+    try {
+        clearFields(); // Clear the fields before calculation
+        document.body.style.cursor = 'wait'; // Change cursor to spinner
+        console.log('Calculate button clicked.');
+
+        const supabase = await initSupabase(); // Ensure Supabase is initialized
+
+        const selectedMaterial = document.getElementById('Desired-Material-Type').value;
+        const selectedServiceType = document.getElementById('Type-Of-Service-Desired').value;
+        const selectedState = document.getElementById('State').value;
+        const selectedStories = document.getElementById('Stories').value;
+        const selectedBuildingType = document.getElementById('Building-Type').value;
+        const selectedRoofSqFt = document.getElementById('Estimated-Roof-Sq-Ft').value;
+        const selectedSteepness = document.querySelector('input[name="Roof-Steepness"]:checked').value;
+
+        // Log inputs to confirm they are being retrieved correctly
+        console.log({
+            selectedMaterial,
+            selectedServiceType,
+            selectedState,
+            selectedStories,
+            selectedBuildingType,
+            selectedRoofSqFt,
+            selectedSteepness
+        });
+
+        const materialData = await fetchData(supabase, 'rooferscout_material_costs', 'material_name', selectedMaterial);
+        const serviceTypeData = await fetchData(supabase, 'rooferscout_service_type_factors', 'service_type', selectedServiceType);
+        const stateData = await fetchData(supabase, 'rooferscout_state_factors', 'state_name', selectedState);
+        const storiesData = await fetchData(supabase, 'rooferscout_stories_costs', 'stories_count', selectedStories);
+        const buildingTypeData = await fetchData(supabase, 'rooferscout_building_type_factors', 'building_type', selectedBuildingType);
+        const roofSqFtData = await fetchData(supabase, 'rooferscout_estimated_roof_sq_ft', 'range_label', selectedRoofSqFt);
+        const steepnessData = await fetchData(supabase, 'rooferscout_steepness_costs', 'steepness_level', selectedSteepness);
+
+        // Check if any of the required data is missing
+        if (!materialData || !serviceTypeData || !stateData || !storiesData || !buildingTypeData || !roofSqFtData || !steepnessData) {
+            console.error('Required data not found for calculation.');
+            return;
+        }
+
+        const minPrice = Math.round(roofSqFtData.upper_value * (
+            (materialData.min_cost * serviceTypeData.factor * stateData.factor * buildingTypeData.factor)
+            + storiesData.cost + steepnessData.cost));
+        const maxPrice = Math.round(roofSqFtData.upper_value * (
+            (materialData.max_cost * serviceTypeData.factor * stateData.factor * buildingTypeData.factor)
+            + storiesData.cost + steepnessData.cost));
+
+        console.log('Min Price:', minPrice);
+        console.log('Max Price:', maxPrice);
+
+        displayPrices(minPrice, maxPrice);
+
+    } catch (error) {
+        console.error('Unexpected error:', error);
+    } finally {
+        document.body.style.cursor = 'default'; // Revert cursor to default
+    }
+}
+
+function clearFields() {
+    console.log('Clearing fields...');
+
+    const minPriceField = document.getElementById('min-price-field');
+    const maxPriceField = document.getElementById('max-price-field');
+    const quoteIdField = document.getElementById('quote-id');
+
+    if (minPriceField) {
+        minPriceField.value = '';
+    }
+    if (maxPriceField) {
+        maxPriceField.value = '';
+    }
+    if (quoteIdField) {
+        quoteIdField.value = '';
+    }
+
+    const minPriceDisplay = document.getElementById('min-price');
+    const maxPriceDisplay = document.getElementById('max-price');
+
+    if (minPriceDisplay) {
+        minPriceDisplay.innerText = '';
+    }
+    if (maxPriceDisplay) {
+        maxPriceDisplay.innerText = '';
+    }
+}
+
+function displayPrices(minPrice, maxPrice) {
+    console.log('Displaying prices...');
+
+    const minPriceField = document.getElementById('min-price-field');
+    const maxPriceField = document.getElementById('max-price-field');
+    const quoteIdField = document.getElementById('quote-id');
+
+    if (minPriceField) {
+        minPriceField.value = minPrice;
+    }
+    if (maxPriceField) {
+        maxPriceField.value = maxPrice;
+    }
+    if (quoteIdField) {
+        quoteIdField.value = generateRandomString(32);
+    }
+
+    const minPriceDisplay = document.getElementById('min-price');
+    const maxPriceDisplay = document.getElementById('max-price');
+
+    if (minPriceDisplay) {
+        minPriceDisplay.innerText = `${minPrice}`;
+    }
+    if (maxPriceDisplay) {
+        maxPriceDisplay.innerText = `${maxPrice}`;
+    }
+}
+
+function generateRandomString(length) {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+    for (let i = 0; i < length; i++) {
+        result += characters.charAt(Math.floor(Math.random() * characters.length));
+    }
+    return result;
+}
+
+// Function to submit form data to Supabase
+async function submitFormToSupabase() {
+    const formData = {
+        'first_name': getValueById('First-Name'),
+        'last_name': getValueById('Last-Name'),
+        'business_name': getValueById('Business-Name'),
+        'email': getValueById('Email'),
+        'phone_number': getValueById('Phone-Number'),
+        'call_allowed': getCheckedById('Call-Allowed'),
+        'text_allowed': getCheckedById('Text-Allowed'),
+        'email_allowed': getCheckedById('Email-Allowed'),
+        'tos': getCheckedById('TOS'),
+        'priv_pol': getCheckedById('Priv-Pol'),
+        'street_address': getValueById('Street-Address'),
+        'street_address_2': getValueById('Street-Address-2'),
+        'state': getValueById('State'),
+        'city': getValueById('City'),
+        'zip_code': getValueById('Zip-Code'),
+        'building_type': getValueById('Building-Type'),
+        'estimated_roof_sq_ft': getValueById('Estimated-Roof-Sq-Ft'),
+        'stories': getValueById('Stories'),
+        'roof_steepness': getRadioValueByName('Roof-Steepness'),
+        'type_of_service_desired': getValueById('Type-Of-Service-Desired'),
+        'current_material_type': getValueById('Current-Material-Type'),
+        'desired_material_type': getValueById('Desired-Material-Type'),
+        'additional_services': getSelectedOptionsById('Additional-Services'),
+        'specific_materials': getValueById('Specific-Materials'),
+        'additional_information': getValueById('Additional-Information'),
+        'will_you_be_using_insurance_2': getValueById('Will-You-Be-Using-Insurance-2'),
+        'insurance_company_2': getValueById('Insurance-Company-2'),
+        'policy_type_2': getValueById('Policy-Type-2'),
+        'started_claim_process_2': getValueById('Started-Claim-Process-2'),
+        'insurance_help_2': getValueById('Insurance-Help-2'),
+        'quote_id': getValueById('quote-id'),
+        'min_price_field': getValueById('min-price-field'),
+        'max_price_field': getValueById('max-price-field'),
+        'damage_type': getValueById('Damage-Type'),
+        'does_user_want_service_2': getValueById('Does-User-Want-Service-2'),
+        'timing_for_service': getValueById('Timing-For-Service')
+    };
+
+    try {
+        const supabase = await initSupabase(); // Ensure Supabase is initialized
+
+        // Attempt to insert the data into Supabase (using public schema for form submission)
+        const { data, error } = await supabase
+            .from('public.rooferscout_main_form_submission_v1')
+            .insert([formData]);
+
+        if (error) {
+            throw error;
+        }
+
+        console.log('Form data submitted successfully:', data);
+        console.log('Redirecting to the completion page...');
+
+        // Redirect to completion page
+        setTimeout(() => {
+            window.location.href = 'https://rooferscout.com/user-info-form/form-completion-page';
+        }, 100);  // Slight delay for the redirect
+
+    } catch (error) {
+        console.error('Error submitting form data:', error);
+        alert("There was an issue submitting your form. Please try clearing your browser cache or using a different browser.");
+    }
+}
+
+// Helper functions to safely retrieve values from elements
+function getValueById(id) {
+    const element = document.getElementById(id);
+    return element ? element.value : '';
+}
+
+function getCheckedById(id) {
+    const element = document.getElementById(id);
+    return element ? element.checked : false;
+}
+
+function getRadioValueByName(name) {
+    const element = document.querySelector(`input[name="${name}"]:checked`);
+    return element ? element.value : '';
+}
+
+function getSelectedOptionsById(id) {
+    const element = document.getElementById(id);
+    return element ? Array.from(element.selectedOptions).map(opt => opt.value) : [];
+}
+
+// Attach the submit function to the button click event
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM fully loaded, setting up event listeners.');
+
+    const calculateButton = document.getElementById('calculate-button');
+    if (calculateButton) {
+        calculateButton.addEventListener('click', (event) => {
+            event.preventDefault();
+            calculatePrice();
+        });
+    } else {
+        console.error('Calculate button not found!');
+    }
+
+    const submitButton = document.getElementById('Submit-Form-to-Supabase');
+    if (submitButton) {
+        submitButton.addEventListener('click', async (event) => {
+            event.preventDefault(); // Prevent the default form submission behavior
+            await submitFormToSupabase(); // Call the submit function
+        });
+    } else {
+        console.error('Submit button not found!');
+    }
+});
+</script>
