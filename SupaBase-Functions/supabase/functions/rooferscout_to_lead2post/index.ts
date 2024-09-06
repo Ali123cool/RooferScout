@@ -6,6 +6,16 @@ const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+
+// Capitalize the first letter of the city
+const capitalizeCity = (city) => {
+  if (city && typeof city === 'string') {
+    return city.charAt(0).toUpperCase() + city.slice(1).toLowerCase();
+  }
+  return city;
+};
+
+
 serve(async (req) => {
   try {
     // Extract the payload from the request
@@ -49,6 +59,9 @@ serve(async (req) => {
       email_allowed,
       business_name
     } = payload.record;
+
+    // Apply city capitalization formatting
+    city = capitalizeCity(city);
 
     // Default: Consider the lead as unique
     let isDuplicate = false;
