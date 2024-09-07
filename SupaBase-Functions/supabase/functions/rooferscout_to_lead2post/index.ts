@@ -116,9 +116,9 @@ serve(async (req) => {
 
     // Step 3: Calculate product price based on service type and demand status
     const priceMatrix = {
-      "Full Roof Replacement": { "Regular": 125, "High Demand": 175 },
-      "New Construction": { "Regular": 75, "High Demand": 105 },
-      "Repair": { "Regular": 50, "High Demand": 85 }
+      "Full Roof Replacement": { "Regular": 90, "High Demand": 110 },
+      "New Construction": { "Regular": 75, "High Demand": 85 },
+      "Repair": { "Regular": 40, "High Demand": 65 }
     };
 
     const productPrice = priceMatrix[type_of_service_desired][demandStatus];
