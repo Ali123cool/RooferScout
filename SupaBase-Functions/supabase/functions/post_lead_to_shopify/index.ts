@@ -287,6 +287,42 @@ for (const publicationId of publicationIds) {
 
     console.log('Step 8: Product successfully added to Main collection in Shopify:', addToCollectionJsonResponse);
 
+    // Step 9: Set product inventory to 1 unit (exclusive lead)
+    const updateInventoryMutation = `
+      mutation {
+        inventorySetOnHand(input: {
+          inventoryLevelId: "gid://shopify/InventoryLevel/${variantId}",
+          available: 1
+        }) {
+          inventoryLevel {
+            available
+          }
+          userErrors {
+            field
+            message
+          }
+        }
+      }
+    `;
+
+    const updateInventoryResponse = await fetch(shopifyGraphQLUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Shopify-Access-Token": shopifyAccessToken,
+      },
+      body: JSON.stringify({ query: updateInventoryMutation }),
+    });
+
+    const updateInventoryJsonResponse = await updateInventoryResponse.json();
+
+    if (updateInventoryJsonResponse.errors || updateInventoryJsonResponse.data.inventorySetOnHand.userErrors.length > 0) {
+      console.error('Step 9 Error: Failed to set product inventory to 1:', updateInventoryJsonResponse.errors || updateInventoryJsonResponse.data.inventorySetOnHand.userErrors);
+      return new Response(JSON.stringify({ message: 'Failed to set product inventory in Shopify', errors: updateInventoryJsonResponse.errors || updateInventoryJsonResponse.data.inventorySetOnHand.userErrors }), { status: 500 });
+    }
+
+    console.log('Step 9: Product inventory successfully set to 1 in Shopify:', updateInventoryJsonResponse);
+
     return new Response(JSON.stringify({ message: 'Product successfully created, updated, and added to collection in Shopify' }), { status: 200 });
 
   } catch (err) {
