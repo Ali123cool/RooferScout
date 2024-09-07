@@ -112,8 +112,19 @@ serve(async (req) => {
     // Step 2: Create product title
     const productTitle = `${city}, ${state} - ${industry} - ${type_of_service_desired} - ($${min_price_field} - $${max_price_field})`;
 
-    // Step 3: Calculate product price
-    const productPrice = (parseFloat(min_price_field) * 0.02).toFixed(2);
+    // Step 3: Calculate product price based on service type and demand status
+
+    // Define the price matrix
+    const priceMatrix = {
+      "Full Roof Replacement": { regular: 125, high_demand: 175 },
+      "New Construction": { regular: 75, high_demand: 105 },
+      "Repair": { regular: 50, high_demand: 85 }
+    };
+
+    // Calculate the price based on the type of service and demand status
+    const productPrice = priceMatrix[type_of_service_desired][demand_status];
+
+    console.log(`The price for ${type_of_service_desired} under ${demand_status} demand is: $${productPrice}`);
 
     // Step 4: Generate product description dynamically
     let productDescription = '';
@@ -166,14 +177,14 @@ serve(async (req) => {
         product_category: industry,
         product_price: productPrice,
         product_type: type_of_service_desired,
-        product_vendor: company_name ?? 'Your Vendor Name',
-        requires_shipping: 'false',  // or true based on your requirement
+        product_vendor: company_name ?? 'Scout',
+        requires_shipping: 'false',  
         client_full_name: `${first_name} ${last_name}`,
         client_business_name: business_name ?? '',
         client_email: email,
         client_phone_number: phone_number,
         client_street_address_full: clientFullAddress,
-        lead_source_company_name: 'Your Company Name',
+        lead_source_company_name: company_name ?? 'Scout',
         client_city: city,
         client_state: state,
         industry: industry,
