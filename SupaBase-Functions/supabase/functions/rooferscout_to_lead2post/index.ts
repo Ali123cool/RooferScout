@@ -1,20 +1,18 @@
+// Initialize Supabase Client
 import { serve } from "https://deno.land/std/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// Initialize Supabase Client
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-
-// Capitalize the first letter of the city
-const capitalizeCity = (city) => {
-  if (city && typeof city === 'string') {
-    return city.charAt(0).toUpperCase() + city.slice(1).toLowerCase();
+// General function to capitalize the first letter of any string
+const capitalizeFirstLetter = (input) => {
+  if (input && typeof input === 'string') {
+    return input.charAt(0).toUpperCase() + input.slice(1).toLowerCase();
   }
-  return city;
+  return input;
 };
-
 
 serve(async (req) => {
   try {
@@ -51,7 +49,6 @@ serve(async (req) => {
       started_claim_process_2,
       insurance_help_2,
       damage_type,
-      demand_status,
       timing_for_service,
       submission_timestamp,
       call_allowed,
@@ -61,23 +58,38 @@ serve(async (req) => {
     } = payload.record;
 
     // Apply city capitalization formatting
-    city = capitalizeCity(city);
+    const capitalizedCity = capitalizeFirstLetter(city);
+  
 
-    // Default: Consider the lead as unique
+    // Step 1: Calculate demand score and demand status
+    const demandScore = 
+      (roof_steepness === 'Flat' || roof_steepness === 'Moderate' ? 1 : 0) +
+      (type_of_service_desired === 'Full Roof Replacement' ? 1 : 0) +
+      (additional_services ? 1 : 0) +
+      (specific_materials ? 1 : 0) +
+      (additional_information ? 1 : 0) +
+      (will_you_be_using_insurance_2 === 'Yes' ? 1 : 0) +
+      (policy_type_2 === 'Home Owners - Replacement Cost' ? 1 : 0) +
+      (damage_type && damage_type !== "I'm Not Sure" ? 1 : 0) +
+      (payload.record.does_user_want_service_2 === 'Yes' ? 1 : 0);
+
+    const demandStatus = demandScore > 6 ? 'High Demand' : 'Regular';
+
+    console.log(`Calculated Demand Score: ${demandScore}, Demand Status: ${demandStatus}`);
+
+    // Final decision: If it's a duplicate, stop processing (This part is unchanged)
     let isDuplicate = false;
-
-    // Step 1.1: Check for potential duplicates in the last 12 hours
     const { data: existingLeadData, error: duplicateError } = await supabase
       .from('rooferscout_main_form_submission_v1')
       .select('*')
       .eq('first_name', first_name)
       .eq('last_name', last_name)
       .eq('street_address', street_address)
-      .eq('city', city)
+      .eq('city', capitalizedCity)
       .eq('state', state)
-      .neq('id', id) // Exclude the current submission by ensuring IDs are different
-      .order('submission_timestamp', { ascending: false }) // Order by the most recent submission
-      .limit(1); // We only care about the most recent submission
+      .neq('id', id)
+      .order('submission_timestamp', { ascending: false })
+      .limit(1);
 
     if (duplicateError) {
       console.error('Error checking for duplicates:', duplicateError.message);
@@ -89,46 +101,32 @@ serve(async (req) => {
       const lastSubmission = new Date(existingLead.submission_timestamp);
       const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000);
 
-      console.log('Existing Lead Found:', existingLead);
-      console.log('Current Record:', {
-        id, first_name, last_name, street_address, city, state, submission_timestamp: new Date().toISOString(),
-      });
-
-      // Step 1.2: Check if the submission was within the last 12 hours
       if (lastSubmission >= twelveHoursAgo) {
         console.log('Matching lead found within 12 hours; marking as duplicate.');
         isDuplicate = true;
       }
     }
 
-    // Final decision: If it's a duplicate, stop processing
     if (isDuplicate) {
       return new Response(JSON.stringify({ message: 'Duplicate lead within 12 hours; no action taken.' }), { status: 200 });
-    } else {
-      console.log('No duplicate found; lead is unique. Proceeding with lead processing.');
-      // Proceed with lead processing (insert into leads_posted_to_shopify, etc.)
     }
 
     // Step 2: Create product title
-    const productTitle = `${city}, ${state} - ${industry} - ${type_of_service_desired} - ($${min_price_field} - $${max_price_field})`;
+    const productTitle = `${capitalizedCity}, ${state} - ${industry} - ${type_of_service_desired} - ($${min_price_field} - $${max_price_field})`;
 
     // Step 3: Calculate product price based on service type and demand status
-
-    // Define the price matrix
     const priceMatrix = {
-      "Full Roof Replacement": { regular: 125, high_demand: 175 },
-      "New Construction": { regular: 75, high_demand: 105 },
-      "Repair": { regular: 50, high_demand: 85 }
+      "Full Roof Replacement": { "Regular": 125, "High Demand": 175 },
+      "New Construction": { "Regular": 75, "High Demand": 105 },
+      "Repair": { "Regular": 50, "High Demand": 85 }
     };
 
-    // Calculate the price based on the type of service and demand status
-    const productPrice = priceMatrix[type_of_service_desired][demand_status];
+    const productPrice = priceMatrix[type_of_service_desired][demandStatus];
 
-    console.log(`The price for ${type_of_service_desired} under ${demand_status} demand is: $${productPrice}`);
+    console.log(`The price for ${type_of_service_desired} under ${demandStatus} demand is: $${productPrice}`);
 
     // Step 4: Generate product description dynamically
     let productDescription = '';
-
     const descriptionFields = {
       'Lead ID': id,
       'Call Allowed': call_allowed,
@@ -152,22 +150,20 @@ serve(async (req) => {
       'Estimated Minimum Price': min_price_field,
       'Estimated Maximum Price': max_price_field,
       'Damage Type': damage_type,
-      'Demand Status': demand_status,
+      'Demand Status': demandStatus,
       'Timing for Service': timing_for_service,
       'Submission Timestamp': submission_timestamp
     };
 
-    // Loop through the fields and append to product description
     for (const [key, value] of Object.entries(descriptionFields)) {
       if (value !== null && value !== undefined && value !== '') {
         productDescription += `- ${key}: ${value}\n`;
       }
     }
 
-    // Step 5: Combine address fields
-    const clientFullAddress = `${street_address} ${street_address_2}, ${city}, ${state} ${zip_code}`;
+    const clientFullAddress = `${street_address} ${street_address_2}, ${capitalizedCity}, ${state} ${zip_code}`;
 
-    // Step 6: Insert into leads_posted_to_shopify table
+    // Step 5: Insert into leads_posted_to_shopify table
     const { error: insertError } = await supabase
       .from('leads_posted_to_shopify')
       .insert([{
@@ -185,11 +181,11 @@ serve(async (req) => {
         client_phone_number: phone_number,
         client_street_address_full: clientFullAddress,
         lead_source_company_name: company_name ?? 'Scout',
-        client_city: city,
+        client_city: capitalizedCity,
         client_state: state,
         industry: industry,
         service_timing: timing_for_service,
-        demand: demand_status,
+        demand: demandStatus,
         time_posted: new Date().toISOString()
       }]);
 

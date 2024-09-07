@@ -168,13 +168,15 @@ serve(async (req) => {
           variants: [
             {
               id: variantId,
-              requires_shipping: false
+              requires_shipping: false, // This sets the product as non-physical (digital)
+              inventory_management: "shopify", // Enable inventory management
+              inventory_policy: "deny" // Prevent selling when out of stock
             }
           ]
         }
       }),
     });
-
+    
     const updateProductJsonResponse = await updateProductResponse.json();
 
     if (updateProductJsonResponse.errors) {
@@ -184,149 +186,196 @@ serve(async (req) => {
 
     console.log('Step 6: Product successfully updated in Shopify:', updateProductJsonResponse);
 
-// Step 7: Fetch publication IDs and publish the product to all relevant sales channels
-console.log('Step 7: Fetching publication IDs and publishing the product to sales channels');
+        // Step 7: Fetch publication IDs and publish the product to all relevant sales channels
+        console.log('Step 7: Fetching publication IDs and publishing the product to sales channels');
 
-// Fetch the publication IDs
-const fetchPublicationsQuery = `
-  {
-    publications(first: 10) {
-      edges {
-        node {
-          id
-          name
+        const fetchPublicationsQuery = `
+          {
+            publications(first: 10) {
+              edges {
+                node {
+                  id
+                  name
+                }
+              }
+            }
+          }
+        `;
+    
+        const fetchPublicationsResponse = await fetch(shopifyGraphQLUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Shopify-Access-Token": shopifyAccessToken,
+          },
+          body: JSON.stringify({ query: fetchPublicationsQuery }),
+        });
+    
+        const fetchPublicationsJsonResponse = await fetchPublicationsResponse.json();
+    
+        if (fetchPublicationsJsonResponse.errors) {
+          console.error('Step 7 Error: Failed to fetch publication IDs:', fetchPublicationsJsonResponse.errors);
+          return new Response(JSON.stringify({ message: 'Failed to fetch publication IDs from Shopify', errors: fetchPublicationsJsonResponse.errors }), { status: 500 });
         }
+    
+        // Extract publication IDs from the response
+        const publicationIds = fetchPublicationsJsonResponse.data.publications.edges.map(edge => edge.node.id);
+    
+        for (const publicationId of publicationIds) {
+          const publishProductMutation = `
+            mutation {
+              publishablePublish(
+                id: "gid://shopify/Product/${productId}",
+                input: {
+                  publicationId: "${publicationId}"
+                }
+              ) {
+                userErrors {
+                  field
+                  message
+                }
+              }
+            }
+          `;
+    
+          const publishProductResponse = await fetch(shopifyGraphQLUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-Shopify-Access-Token": shopifyAccessToken,
+            },
+            body: JSON.stringify({ query: publishProductMutation }),
+          });
+    
+          const publishProductJsonResponse = await publishProductResponse.json();
+    
+          if (publishProductJsonResponse.errors || publishProductJsonResponse.data.publishablePublish.userErrors.length > 0) {
+            console.error('Step 7 Error: Shopify Product Publishing Error for Publication ID', publicationId, ':', publishProductJsonResponse.errors || publishProductJsonResponse.data.publishablePublish.userErrors);
+            return new Response(JSON.stringify({ message: `Failed to publish product to sales channel with Publication ID ${publicationId} in Shopify`, errors: publishProductJsonResponse.errors || publishProductJsonResponse.data.publishablePublish.userErrors }), { status: 500 });
+          }
+    
+          console.log(`Step 7: Product successfully published to sales channel with Publication ID ${publicationId}`);
+        }
+    
+        // Step 8: Add product to the "Main" collection
+        const addToCollectionMutation = `
+          mutation {
+            collectionAddProducts(id: "gid://shopify/Collection/322758344853", productIds: ["gid://shopify/Product/${productId}"]) {
+              userErrors {
+                field
+                message
+              }
+            }
+          }
+        `;
+    
+        const addToCollectionResponse = await fetch(shopifyGraphQLUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Shopify-Access-Token": shopifyAccessToken,
+          },
+          body: JSON.stringify({ query: addToCollectionMutation }),
+        });
+    
+        const addToCollectionJsonResponse = await addToCollectionResponse.json();
+    
+        if (addToCollectionJsonResponse.errors || addToCollectionJsonResponse.data.collectionAddProducts.userErrors.length > 0) {
+          console.error('Step 8 Error: Shopify Collection Update Error:', addToCollectionJsonResponse.errors || addToCollectionJsonResponse.data.collectionAddProducts.userErrors);
+          return new Response(JSON.stringify({ message: 'Failed to add product to collection in Shopify', errors: addToCollectionJsonResponse.errors || addToCollectionJsonResponse.data.collectionAddProducts.userErrors }), { status: 500 });
+        }
+    
+        console.log('Step 8: Product successfully added to Main collection in Shopify:', addToCollectionJsonResponse);
+    
+      
+      // Fetch the Location ID (use the first location available)
+const fetchLocationResponse = await fetch(`${Deno.env.get("SHOPIFY_URL_1")!}/admin/api/2024-07/locations.json`, {
+  method: "GET",
+  headers: {
+    "Content-Type": "application/json",
+    "X-Shopify-Access-Token": shopifyAccessToken,
+  },
+});
+
+const fetchLocationJsonResponse = await fetchLocationResponse.json();
+if (!fetchLocationJsonResponse.locations || fetchLocationJsonResponse.locations.length === 0) {
+  console.error("Error: No locations found.");
+  return new Response(JSON.stringify({ message: "No locations found for inventory management." }), { status: 500 });
+}
+
+const locationId = fetchLocationJsonResponse.locations[0].id;
+console.log(`Fetched Location ID: ${locationId}`);
+
+// Step 9: Fetch the InventoryItem ID for the product variant
+const fetchInventoryItemQuery = `
+  query {
+    productVariant(id: "gid://shopify/ProductVariant/${variantId}") {
+      inventoryItem {
+        id
       }
     }
   }
 `;
 
-const fetchPublicationsResponse = await fetch(shopifyGraphQLUrl, {
+const fetchInventoryItemResponse = await fetch(shopifyGraphQLUrl, {
   method: "POST",
   headers: {
     "Content-Type": "application/json",
     "X-Shopify-Access-Token": shopifyAccessToken,
   },
-  body: JSON.stringify({ query: fetchPublicationsQuery }),
+  body: JSON.stringify({ query: fetchInventoryItemQuery }),
 });
 
-const fetchPublicationsJsonResponse = await fetchPublicationsResponse.json();
+const fetchInventoryItemJsonResponse = await fetchInventoryItemResponse.json();
 
-if (fetchPublicationsJsonResponse.errors) {
-  console.error('Step 7 Error: Failed to fetch publication IDs:', fetchPublicationsJsonResponse.errors);
-  return new Response(JSON.stringify({ message: 'Failed to fetch publication IDs from Shopify', errors: fetchPublicationsJsonResponse.errors }), { status: 500 });
+if (!fetchInventoryItemJsonResponse.data || !fetchInventoryItemJsonResponse.data.productVariant.inventoryItem) {
+  console.error("Failed to fetch InventoryItem ID.");
+  return new Response(
+    JSON.stringify({ message: "Failed to fetch InventoryItem ID" }),
+    { status: 500 }
+  );
 }
 
-// Extract publication IDs from the response
-const publicationIds = fetchPublicationsJsonResponse.data.publications.edges.map(edge => edge.node.id);
+const inventoryItemId = fetchInventoryItemJsonResponse.data.productVariant.inventoryItem.id;
+console.log(`Fetched InventoryItem ID: ${inventoryItemId}`);
 
-for (const publicationId of publicationIds) {
-  const publishProductMutation = `
-    mutation {
-      publishablePublish(
-        id: "gid://shopify/Product/${productId}",
-        input: {
-          publicationId: "${publicationId}"
-        }
-      ) {
-        userErrors {
-          field
-          message
-        }
-      }
-    }
-  `;
+// Step 10: Adjust the inventory level using REST API
+// Extract the numeric part of the InventoryItem ID
+const inventoryItemIdNumeric = inventoryItemId.split("/").pop();
+console.log(`Extracted numeric InventoryItem ID: ${inventoryItemIdNumeric}`);
 
-  const publishProductResponse = await fetch(shopifyGraphQLUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Shopify-Access-Token": shopifyAccessToken,
-    },
-    body: JSON.stringify({ query: publishProductMutation }),
-  });
-
-  const publishProductJsonResponse = await publishProductResponse.json();
-
-  if (publishProductJsonResponse.errors || publishProductJsonResponse.data.publishablePublish.userErrors.length > 0) {
-    console.error('Step 7 Error: Shopify Product Publishing Error for Publication ID', publicationId, ':', publishProductJsonResponse.errors || publishProductJsonResponse.data.publishablePublish.userErrors);
-    return new Response(JSON.stringify({ message: `Failed to publish product to sales channel with Publication ID ${publicationId} in Shopify`, errors: publishProductJsonResponse.errors || publishProductJsonResponse.data.publishablePublish.userErrors }), { status: 500 });
-  }
-
-  console.log(`Step 7: Product successfully published to sales channel with Publication ID ${publicationId}`);
-}
-
-
-    // Step 8: Add product to the "Main" collection
-    const addToCollectionMutation = `
-      mutation {
-        collectionAddProducts(id: "gid://shopify/Collection/322758344853", productIds: ["gid://shopify/Product/${productId}"]) {
-          userErrors {
-            field
-            message
-          }
-        }
-      }
-    `;
-
-    const addToCollectionResponse = await fetch(shopifyGraphQLUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Shopify-Access-Token": shopifyAccessToken,
-      },
-      body: JSON.stringify({ query: addToCollectionMutation }),
-    });
-
-    const addToCollectionJsonResponse = await addToCollectionResponse.json();
-
-    if (addToCollectionJsonResponse.errors || addToCollectionJsonResponse.data.collectionAddProducts.userErrors.length > 0) {
-      console.error('Step 8 Error: Shopify Collection Update Error:', addToCollectionJsonResponse.errors || addToCollectionJsonResponse.data.collectionAddProducts.userErrors);
-      return new Response(JSON.stringify({ message: 'Failed to add product to collection in Shopify', errors: addToCollectionJsonResponse.errors || addToCollectionJsonResponse.data.collectionAddProducts.userErrors }), { status: 500 });
-    }
-
-    console.log('Step 8: Product successfully added to Main collection in Shopify:', addToCollectionJsonResponse);
-
-    // Step 9: Set product inventory to 1 unit (exclusive lead)
-    const updateInventoryMutation = `
-      mutation {
-        inventorySetOnHand(input: {
-          inventoryLevelId: "gid://shopify/InventoryLevel/${variantId}",
-          available: 1
-        }) {
-          inventoryLevel {
-            available
-          }
-          userErrors {
-            field
-            message
-          }
-        }
-      }
-    `;
-
-    const updateInventoryResponse = await fetch(shopifyGraphQLUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Shopify-Access-Token": shopifyAccessToken,
-      },
-      body: JSON.stringify({ query: updateInventoryMutation }),
-    });
-
-    const updateInventoryJsonResponse = await updateInventoryResponse.json();
-
-    if (updateInventoryJsonResponse.errors || updateInventoryJsonResponse.data.inventorySetOnHand.userErrors.length > 0) {
-      console.error('Step 9 Error: Failed to set product inventory to 1:', updateInventoryJsonResponse.errors || updateInventoryJsonResponse.data.inventorySetOnHand.userErrors);
-      return new Response(JSON.stringify({ message: 'Failed to set product inventory in Shopify', errors: updateInventoryJsonResponse.errors || updateInventoryJsonResponse.data.inventorySetOnHand.userErrors }), { status: 500 });
-    }
-
-    console.log('Step 9: Product inventory successfully set to 1 in Shopify:', updateInventoryJsonResponse);
-
-    return new Response(JSON.stringify({ message: 'Product successfully created, updated, and added to collection in Shopify' }), { status: 200 });
-
-  } catch (err) {
-    console.error("Unexpected error:", err.message);
-    return new Response(JSON.stringify({ message: "Unexpected error occurred", error: err.message }), { status: 500 });
-  }
+// Adjust the inventory level using the numeric InventoryItem ID
+const adjustInventoryResponse = await fetch(`${Deno.env.get("SHOPIFY_URL_1")!}/admin/api/2024-07/inventory_levels/set.json`, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "X-Shopify-Access-Token": shopifyAccessToken,
+  },
+  body: JSON.stringify({
+    location_id: locationId,
+    inventory_item_id: inventoryItemIdNumeric, // Pass the numeric ID here
+    available: 1, // Set available quantity to 1
+  }),
 });
+
+const adjustInventoryJsonResponse = await adjustInventoryResponse.json();
+
+if (adjustInventoryJsonResponse.errors) {
+  console.error("Failed to adjust product inventory:", adjustInventoryJsonResponse.errors);
+  return new Response(
+    JSON.stringify({ message: "Failed to adjust product inventory", errors: adjustInventoryJsonResponse.errors }),
+    { status: 500 }
+  );
+}
+
+console.log("Product inventory successfully set to 1.");
+
+    
+        return new Response(JSON.stringify({ message: 'Product successfully created, updated, and added to collection in Shopify' }), { status: 200 });
+    
+      } catch (err) {
+        console.error("Unexpected error:", err.message);
+        return new Response(JSON.stringify({ message: "Unexpected error occurred", error: err.message }), { status: 500 });
+      }
+    });
+    
