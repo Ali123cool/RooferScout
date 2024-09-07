@@ -6,114 +6,98 @@ const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Brevo API Key
-const brevoApiKey = Deno.env.get("BREVO_API_KEY_ROOFERSCOUT_1")!;
+// Brevo API Key from environment
+const brevoApiKey = Deno.env.get("BREVO_API_KEY_ROOFERSCOUT_1");
 
-// Function to send email using Brevo API
-async function sendEmail({ to, sender, subject, content }) {
+if (!brevoApiKey) {
+  console.error("Brevo API Key is missing");
+  throw new Error("Brevo API key is not set");
+}
+
+// Serve function to handle incoming requests
+serve(async (req) => {
+  try {
+    // Parse the request body
+    const body = await req.json();
+    const { lead_id, buying_company_name, buying_company_agent_name, buying_company_agent_email, buying_company_agent_phone } = body.record;
+
+    // Fetch the lead's source company from the leads_posted_to_shopify table
+    const { data: leadData, error: leadError } = await supabase
+      .from('leads_posted_to_shopify')
+      .select('client_full_name, client_email, lead_source_company_name')
+      .eq('id', lead_id)
+      .single();
+
+    if (leadError || !leadData) {
+      console.error('Failed to fetch lead data:', leadError);
+      return new Response("Failed to fetch lead data", { status: 500 });
+    }
+
+    const { client_full_name, client_email, lead_source_company_name } = leadData;
+
+    // Query form_to_industry_association to get the Brevo details
+    const { data: brevoData, error: brevoError } = await supabase
+      .from('form_to_industry_association')
+      .select('brevo_email, brevo_sender_name, brevo_template_id')
+      .eq('company_name', lead_source_company_name)
+      .single();
+
+    if (brevoError || !brevoData) {
+      console.error('Failed to fetch Brevo data. Using default values:', brevoError);
+      // Use default fallback if no match found
+      brevoData = {
+        brevo_email: "Admin-1@rooferscout.com",
+        brevo_sender_name: "RooferScout",
+        brevo_template_id: 3,  // Default template ID
+      };
+    }
+
+    const { brevo_email, brevo_sender_name, brevo_template_id } = brevoData;
+
+    // Prepare the email content
     const brevoUrl = "https://api.brevo.com/v3/smtp/email";
 
+    // Send email via Brevo API
     const response = await fetch(brevoUrl, {
-        method: "POST",
-        headers: {
-            Authorization: `Bearer ${brevoApiKey}`,
-            "Content-Type": "application/json",
+      method: "POST",
+      headers: {
+        "accept": "application/json",
+        "api-key": brevoApiKey,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        sender: {
+          email: brevo_email,         // Sender's email from the association
+          name: brevo_sender_name,    // Sender's name from the association
         },
-        body: JSON.stringify({
-            sender,
-            to: [{ email: to }],
-            subject,
-            htmlContent: `<html><body>${content}</body></html>`,
-        }),
+        to: [{ email: client_email, name: client_full_name }],  // Recipient's email and name
+        templateId: brevo_template_id,  // Template ID from the association
+        params: {
+          FIRSTNAME: client_full_name,         // Client's first name
+          COMPANY: buying_company_name || "Unknown Company",
+          AGENTNAME: buying_company_agent_name,
+          AGENTEMAIL: buying_company_agent_email,
+          AGENTPHONE: buying_company_agent_phone
+        },
+        subject: `We have matched you with a provider, ${client_full_name}!`,  // Optional, overrides template subject
+      }),
     });
 
-    if (response.ok) {
-        return true;
-    } else {
-        console.error("Failed to send email:", await response.text());
-        return false;
-    }
-}
-
-// Function to fetch lead, company, and sender info
-async function fetchLeadCompanyAndSenderInfo(leadId) {
-    // Fetch company info from lead_sold
-    const { data: companyData, error: companyError } = await supabase
-        .from('lead_sold')
-        .select('*')
-        .eq('lead_id', leadId)
-        .single();
-
-    if (companyError) {
-        throw new Error(`Error fetching company data: ${companyError.message}`);
+    // Handle Brevo API response
+    if (!response.ok) {
+      const errorMessage = await response.text();
+      console.error(`Brevo API Error: ${errorMessage}`);
+      return new Response(`Failed to send email via Brevo: ${errorMessage}`, { status: 500 });
     }
 
-    // Fetch client info from leads_posted_to_shopify
-    const { data: clientData, error: clientError } = await supabase
-        .from('leads_posted_to_shopify')
-        .select('*')
-        .eq('id', leadId)
-        .single();
+    const result = await response.json();
+    console.log("Brevo API called successfully. Returned data:", result);
 
-    if (clientError) {
-        throw new Error(`Error fetching client data: ${clientError.message}`);
-    }
+    // Return success response
+    return new Response("Email sent successfully", { status: 200 });
 
-    // Fetch sender info based on product_vendor
-    const { data: senderData, error: senderError } = await supabase
-        .from('form_to_industry_association')
-        .select('brevo_sender_name, brevo_email')
-        .eq('website_company_name', clientData.product_vendor)
-        .single();
-
-    if (senderError) {
-        throw new Error(`Error fetching sender data: ${senderError.message}`);
-    }
-
-    return { companyData, clientData, senderData };
-}
-
-// Main request handler function
-async function handleRequest(req) {
-    try {
-        const { lead_id } = await req.json();  // Expecting the lead_id to be passed in the request payload
-
-        const { companyData, clientData, senderData } = await fetchLeadCompanyAndSenderInfo(lead_id);
-
-        const emailContent = `
-            Hi ${clientData.first_name},
-
-            We are pleased to inform you that we have paired you with a company for your ${companyData.industry} needs. Please expect to be contacted soon.
-
-            Here are the details of the company:
-            - Company Name: ${companyData.buying_company_name}
-            - Agent Name: ${companyData.buying_company_agent_name}
-            - Email: ${companyData.buying_company_agent_email}
-            - Phone: ${companyData.buying_company_agent_phone}
-
-            Best regards,
-            ${senderData.brevo_sender_name}
-        `;
-
-        const emailSent = await sendEmail({
-            to: clientData.email,
-            sender: {
-                name: senderData.brevo_sender_name,
-                email: senderData.brevo_email,
-            },
-            subject: "You've been paired with a company for your needs",
-            content: emailContent,
-        });
-
-        if (emailSent) {
-            return new Response("Email sent successfully", { status: 200 });
-        } else {
-            throw new Error("Failed to send email");
-        }
-    } catch (error) {
-        console.error("Error processing request:", error);
-        return new Response(`Error processing request: ${error.message}`, { status: 500 });
-    }
-}
-
-serve(handleRequest);
+  } catch (error) {
+    console.error("Error processing request:", error);
+    return new Response("Internal Server Error", { status: 500 });
+  }
+});
