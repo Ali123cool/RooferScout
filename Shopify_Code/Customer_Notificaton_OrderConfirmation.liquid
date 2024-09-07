@@ -186,16 +186,14 @@
         {% assign address_metafield = line.product.metafields.custom.client_street_address_full %}
         {% assign product_description = line.product.description %}
 
-        <br/>
-        <p><strong>Client Name:</strong> {{ name_metafield }}</p>
-        <p><strong>Client Phone Number:</strong> {{ phone_metafield }}</p>
-        <p><strong>Client Email:</strong> {{ email_metafield }}</p>
-        <p><strong>Client Address:</strong> {{ address_metafield }}</p>
+        {% unless line.product.tags contains 'member' %}
+          <p><strong>Client Name:</strong> {{ name_metafield }}</p>
+          <p><strong>Client Phone Number:</strong> {{ phone_metafield }}</p>
+          <p><strong>Client Email:</strong> {{ email_metafield }}</p>
+          <p><strong>Client Address:</strong> {{ address_metafield }}</p>
+        {% else %}
+        {% endunless %}
 
-        <br/>
-        <p><strong>Description:</p> 
-        <p></strong> {{ product_description }}</p>
-        
 
         {% if line.variant.title != 'Default Title' and line.bundle_parent? == false %}
         <span class="order-list__item-variant">{{ line.variant.title }}</span><br/>
