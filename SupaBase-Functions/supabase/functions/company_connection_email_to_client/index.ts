@@ -71,7 +71,7 @@ serve(async (req) => {
         templateId: brevo_template_id,  // Template ID from the association
         params: {
           FIRSTNAME: client_full_name,         // Client's first name
-          COMPANY: buying_company_name ,
+          COMPANY: buying_company_name,
           AGENTNAME: buying_company_agent_name,
           AGENTEMAIL: buying_company_agent_email,
           AGENTPHONE: buying_company_agent_phone

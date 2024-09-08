@@ -50,15 +50,16 @@ serve(async (req) => {
     const orderPriceTaxAmount = parseFloat(current_total_tax);
 
     for (const item of line_items) {
-      const leadId = null; // Initially set to null, will be fetched if available
+      // Fetch lead_id from Shopify metafields before insertion
+      const leadId = await fetchLeadIdFromShopify(item.product_id);
       const leadOriginalPrice = parseFloat(item.price);
 
-      // Insert initial data into the Supabase table with the additional_shopify_product_id column
+      // Insert data into the Supabase table
       const { data, error } = await supabase
         .from('lead_sold')  // Replace with your actual table name
         .insert([
           {
-            lead_id: leadId,  // Initially null
+            lead_id: leadId,  // Directly insert the fetched lead_id
             lead_sold_timestamp: created_at,
             lead_original_price: leadOriginalPrice,
             buying_company_name: companyName,
@@ -77,22 +78,8 @@ serve(async (req) => {
       if (error) {
         console.error("Error inserting data into Supabase:", error);
         continue;
-      }
-
-      // Fetch lead_id from Shopify metafields after insertion
-      const fetchedLeadId = await fetchLeadIdFromShopify(item.product_id);
-      if (fetchedLeadId) {
-        const updateResult = await supabase
-          .from('lead_sold')
-          .update({ lead_id: fetchedLeadId })
-          .eq('order_id', orderId)
-          .eq('additional_shopify_product_id', item.product_id);
-
-        if (updateResult.error) {
-          console.error("Error updating lead_id in Supabase:", updateResult.error);
-        } else {
-          console.log(`Successfully updated lead_id for product ${item.title} with lead_id: ${fetchedLeadId}`);
-        }
+      } else {
+        console.log(`Successfully inserted data for product ${item.title} with lead_id: ${leadId}`);
       }
     }
 
