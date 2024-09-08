@@ -42,17 +42,14 @@ serve(async (req) => {
       .eq('company_name', lead_source_company_name)
       .single();
 
-    if (brevoError || !brevoData) {
-      console.error('Failed to fetch Brevo data. Using default values:', brevoError);
-      // Use default fallback if no match found
-      brevoData = {
-        brevo_email: "Admin-1@rooferscout.com",
-        brevo_sender_name: "RooferScout",
-        brevo_template_id: 3,  // Default template ID
-      };
-    }
+    // Use default values if no match found or error occurs
+    const fallbackBrevoData = {
+      brevo_email: "Admin-1@rooferscout.com",
+      brevo_sender_name: "RooferScout",
+      brevo_template_id: 3,  // Default template ID
+    };
 
-    const { brevo_email, brevo_sender_name, brevo_template_id } = brevoData;
+    const { brevo_email, brevo_sender_name, brevo_template_id } = brevoData || fallbackBrevoData;
 
     // Prepare the email content
     const brevoUrl = "https://api.brevo.com/v3/smtp/email";
@@ -74,7 +71,7 @@ serve(async (req) => {
         templateId: brevo_template_id,  // Template ID from the association
         params: {
           FIRSTNAME: client_full_name,         // Client's first name
-          COMPANY: buying_company_name || "Unknown Company",
+          COMPANY: buying_company_name ,
           AGENTNAME: buying_company_agent_name,
           AGENTEMAIL: buying_company_agent_email,
           AGENTPHONE: buying_company_agent_phone

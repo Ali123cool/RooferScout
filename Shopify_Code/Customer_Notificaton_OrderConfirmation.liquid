@@ -191,7 +191,11 @@
           <p><strong>Client Phone Number:</strong> {{ phone_metafield }}</p>
           <p><strong>Client Email:</strong> {{ email_metafield }}</p>
           <p><strong>Client Address:</strong> {{ address_metafield }}</p>
+          <p><strong>Description:</strong></p> 
+            <p>{{ product_description }}</p> <!-- Always display product description -->
         {% else %}
+                    <p><strong>Description:</strong></p> 
+            <p>{{ product_description }}</p> <!-- Always display product description -->
         {% endunless %}
 
 

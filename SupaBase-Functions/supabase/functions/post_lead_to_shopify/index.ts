@@ -47,7 +47,7 @@ serve(async (req) => {
       mutation {
         productCreate(input: {
           title: "${product_title}",
-          descriptionHtml: "${formattedDescription}",
+          descriptionHtml: """${formattedDescription}""",
           vendor: "${product_vendor}",
           productType: "${product_type}",
           tags: ["${client_city}", "${client_state}", "${industry}"],
