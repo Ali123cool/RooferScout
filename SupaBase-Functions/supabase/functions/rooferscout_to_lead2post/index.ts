@@ -68,39 +68,96 @@ serve(async (req) => {
     const normalizedCity = normalizeString(capitalizedCity);
     const normalizedState = normalizeString(state);
 
-    // Step 1: Check for duplicate submissions
-    let isDuplicate = false;
-    const { data: existingLeadData, error: duplicateError } = await supabase
-      .from('rooferscout_main_form_submission_v1')
-      .select('*')
-      .eq('first_name', normalizedFirstName)
-      .eq('last_name', normalizedLastName)
-      .eq('street_address', normalizedStreetAddress)
-      .eq('city', normalizedCity)
-      .eq('state', normalizedState)
-      .neq('id', id)
-      .order('submission_timestamp', { ascending: false })
-      .limit(1);
+   // Check for duplicates using normalized, capitalized, and raw data
+let isDuplicate = false;
+const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000);
 
-    if (duplicateError) {
-      console.error('Error checking for duplicates:', duplicateError.message);
-      return new Response(JSON.stringify({ message: 'Error checking for duplicates', error: duplicateError.message }), { status: 500 });
+// 1. Check for normalized data duplicates
+const { data: normalizedLeadData, error: normalizedError } = await supabase
+  .from('rooferscout_main_form_submission_v1')
+  .select('*')
+  .eq('first_name', normalizedFirstName)
+  .eq('last_name', normalizedLastName)
+  .eq('street_address', normalizedStreetAddress)
+  .eq('city', normalizedCity)
+  .eq('state', normalizedState)
+  .neq('id', id)
+  .order('submission_timestamp', { ascending: false })
+  .limit(1);
+
+if (normalizedError) {
+  console.error('Error checking for normalized duplicates:', normalizedError.message);
+  return new Response(JSON.stringify({ message: 'Error checking for normalized duplicates', error: normalizedError.message }), { status: 500 });
+}
+
+if (normalizedLeadData && normalizedLeadData.length > 0) {
+  const lastSubmission = new Date(normalizedLeadData[0].submission_timestamp);
+  if (lastSubmission >= twelveHoursAgo) {
+    console.log('Duplicate found with normalized data.');
+    isDuplicate = true;
+  }
+}
+
+// 2. Check for duplicates with capitalized city
+if (!isDuplicate) {
+  const { data: capitalizedLeadData, error: capitalizedError } = await supabase
+    .from('rooferscout_main_form_submission_v1')
+    .select('*')
+    .eq('first_name', first_name)
+    .eq('last_name', last_name)
+    .eq('street_address', street_address)
+    .eq('city', capitalizedCity)
+    .eq('state', state)
+    .neq('id', id)
+    .order('submission_timestamp', { ascending: false })
+    .limit(1);
+
+  if (capitalizedError) {
+    console.error('Error checking for capitalized city duplicates:', capitalizedError.message);
+    return new Response(JSON.stringify({ message: 'Error checking for capitalized city duplicates', error: capitalizedError.message }), { status: 500 });
+  }
+
+  if (capitalizedLeadData && capitalizedLeadData.length > 0) {
+    const lastSubmission = new Date(capitalizedLeadData[0].submission_timestamp);
+    if (lastSubmission >= twelveHoursAgo) {
+      console.log('Duplicate found with capitalized city.');
+      isDuplicate = true;
     }
+  }
+}
 
-    if (existingLeadData && existingLeadData.length > 0) {
-      const existingLead = existingLeadData[0];
-      const lastSubmission = new Date(existingLead.submission_timestamp);
-      const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000);
+// 3. Check for raw data duplicates
+if (!isDuplicate) {
+  const { data: rawLeadData, error: rawError } = await supabase
+    .from('rooferscout_main_form_submission_v1')
+    .select('*')
+    .eq('first_name', first_name)
+    .eq('last_name', last_name)
+    .eq('street_address', street_address)
+    .eq('city', city)
+    .eq('state', state)
+    .neq('id', id)
+    .order('submission_timestamp', { ascending: false })
+    .limit(1);
 
-      if (lastSubmission >= twelveHoursAgo) {
-        console.log('Matching lead found within 12 hours; marking as duplicate.');
-        isDuplicate = true;
-      }
+  if (rawError) {
+    console.error('Error checking for raw data duplicates:', rawError.message);
+    return new Response(JSON.stringify({ message: 'Error checking for raw data duplicates', error: rawError.message }), { status: 500 });
+  }
+
+  if (rawLeadData && rawLeadData.length > 0) {
+    const lastSubmission = new Date(rawLeadData[0].submission_timestamp);
+    if (lastSubmission >= twelveHoursAgo) {
+      console.log('Duplicate found with raw data.');
+      isDuplicate = true;
     }
+  }
+}
 
-    if (isDuplicate) {
-      return new Response(JSON.stringify({ message: 'Duplicate lead within 12 hours; no action taken.' }), { status: 200 });
-    }
+// Stop processing if any duplicate found
+if (isDuplicate) {
+  return new Response(JSON.stringify({ message: 'Duplicate lead within 12 hours; no action taken.' }), { status: 200 });
+}
 
     // Step 2: Calculate demand score and demand status
     const demandScore = 
