@@ -14,6 +14,9 @@ const capitalizeFirstLetter = (input) => {
   return input;
 };
 
+// Function to normalize input for comparison
+const normalizeString = (input) => input ? input.trim().toLowerCase() : '';
+
 serve(async (req) => {
   try {
     // Extract the payload from the request
@@ -57,36 +60,24 @@ serve(async (req) => {
       business_name
     } = payload.record;
 
-    // Apply city capitalization formatting
+    // Capitalize and normalize the fields before the duplicate check
     const capitalizedCity = capitalizeFirstLetter(city);
-  
+    const normalizedFirstName = normalizeString(first_name);
+    const normalizedLastName = normalizeString(last_name);
+    const normalizedStreetAddress = normalizeString(street_address);
+    const normalizedCity = normalizeString(capitalizedCity);
+    const normalizedState = normalizeString(state);
 
-    // Step 1: Calculate demand score and demand status
-    const demandScore = 
-      (roof_steepness === 'Flat' || roof_steepness === 'Moderate' ? 1 : 0) +
-      (type_of_service_desired === 'Full Roof Replacement' ? 1 : 0) +
-      (additional_services ? 1 : 0) +
-      (specific_materials ? 1 : 0) +
-      (additional_information ? 1 : 0) +
-      (will_you_be_using_insurance_2 === 'Yes' ? 1 : 0) +
-      (policy_type_2 === 'Home Owners - Replacement Cost' ? 1 : 0) +
-      (damage_type && damage_type !== "I'm Not Sure" ? 1 : 0) +
-      (payload.record.does_user_want_service_2 === 'Yes' ? 1 : 0);
-
-    const demandStatus = demandScore > 6 ? 'High Demand' : 'Regular';
-
-    console.log(`Calculated Demand Score: ${demandScore}, Demand Status: ${demandStatus}`);
-
-    // Final decision: If it's a duplicate, stop processing (This part is unchanged)
+    // Step 1: Check for duplicate submissions
     let isDuplicate = false;
     const { data: existingLeadData, error: duplicateError } = await supabase
       .from('rooferscout_main_form_submission_v1')
       .select('*')
-      .eq('first_name', first_name)
-      .eq('last_name', last_name)
-      .eq('street_address', street_address)
-      .eq('city', capitalizedCity)
-      .eq('state', state)
+      .eq('first_name', normalizedFirstName)
+      .eq('last_name', normalizedLastName)
+      .eq('street_address', normalizedStreetAddress)
+      .eq('city', normalizedCity)
+      .eq('state', normalizedState)
       .neq('id', id)
       .order('submission_timestamp', { ascending: false })
       .limit(1);
@@ -111,59 +102,56 @@ serve(async (req) => {
       return new Response(JSON.stringify({ message: 'Duplicate lead within 12 hours; no action taken.' }), { status: 200 });
     }
 
-    // Step 2: Create product title
+    // Step 2: Calculate demand score and demand status
+    const demandScore = 
+      (roof_steepness === 'Flat' || roof_steepness === 'Moderate' ? 1 : 0) +
+      (type_of_service_desired === 'Full Roof Replacement' ? 1 : 0) +
+      (additional_services ? 1 : 0) +
+      (specific_materials ? 1 : 0) +
+      (additional_information ? 1 : 0) +
+      (will_you_be_using_insurance_2 === 'Yes' ? 1 : 0) +
+      (policy_type_2 === 'Home Owners - Replacement Cost' ? 1 : 0) +
+      (damage_type && damage_type !== "I'm Not Sure" ? 1 : 0) +
+      (payload.record.does_user_want_service_2 === 'Yes' ? 1 : 0);
+
+    const demandStatus = demandScore > 6 ? 'High Demand' : 'Regular';
+
+    console.log(`Calculated Demand Score: ${demandScore}, Demand Status: ${demandStatus}`);
+
+    // Step 3: Create product title and description
     const productTitle = `${capitalizedCity}, ${state} - ${industry} - ${type_of_service_desired} - ($${min_price_field} - $${max_price_field})`;
 
-    // Step 3: Calculate product price based on service type and demand status
-    const priceMatrix = {
-      "Full Roof Replacement": { "Regular": 90, "High Demand": 110 },
-      "New Construction": { "Regular": 75, "High Demand": 85 },
-      "Repair": { "Regular": 40, "High Demand": 65 }
-    };
-
-    const productPrice = priceMatrix[type_of_service_desired][demandStatus];
-
-    console.log(`The price for ${type_of_service_desired} under ${demandStatus} demand is: $${productPrice}`);
-
-    // Step 4: Generate product description dynamically
-    let productDescription = '';
-    const descriptionFields = {
-      'Lead ID': id,
-      'Call Allowed': call_allowed,
-      'Text Allowed': text_allowed,
-      'Email Allowed': email_allowed,
-      'Building Type': building_type,
-      'Estimated Roof Sq Ft': estimated_roof_sq_ft,
-      'Stories': stories,
-      'Roof Steepness': roof_steepness,
-      'Type of Service Desired': type_of_service_desired,
-      'Current Material Type': current_material_type,
-      'Desired Material Type': desired_material_type,
-      'Additional Services': additional_services,
-      'Specific Materials': specific_materials,
-      'Additional Information': additional_information,
-      'Will you be using insurance?': will_you_be_using_insurance_2,
-      'Insurance Company': insurance_company_2,
-      'Policy Type': policy_type_2,
-      'Started Claim Process': started_claim_process_2,
-      'Insurance Help': insurance_help_2,
-      'Estimated Minimum Price': min_price_field,
-      'Estimated Maximum Price': max_price_field,
-      'Damage Type': damage_type,
-      'Demand Status': demandStatus,
-      'Timing for Service': timing_for_service,
-      'Submission Timestamp': submission_timestamp
-    };
-
-    for (const [key, value] of Object.entries(descriptionFields)) {
-      if (value !== null && value !== undefined && value !== '') {
-        productDescription += `- ${key}: ${value}\n`;
-      }
-    }
+    const productDescription = [
+      `Lead ID: ${id}`,
+      `Call Allowed: ${call_allowed}`,
+      `Text Allowed: ${text_allowed}`,
+      `Email Allowed: ${email_allowed}`,
+      `Building Type: ${building_type}`,
+      `Estimated Roof Sq Ft: ${estimated_roof_sq_ft}`,
+      `Stories: ${stories}`,
+      `Roof Steepness: ${roof_steepness}`,
+      `Type of Service Desired: ${type_of_service_desired}`,
+      `Current Material Type: ${current_material_type}`,
+      `Desired Material Type: ${desired_material_type}`,
+      `Additional Services: ${additional_services}`,
+      `Specific Materials: ${specific_materials}`,
+      `Additional Information: ${additional_information}`,
+      `Will you be using insurance? ${will_you_be_using_insurance_2}`,
+      `Insurance Company: ${insurance_company_2}`,
+      `Policy Type: ${policy_type_2}`,
+      `Started Claim Process: ${started_claim_process_2}`,
+      `Insurance Help: ${insurance_help_2}`,
+      `Estimated Minimum Price: ${min_price_field}`,
+      `Estimated Maximum Price: ${max_price_field}`,
+      `Damage Type: ${damage_type}`,
+      `Demand Status: ${demandStatus}`,
+      `Timing for Service: ${timing_for_service}`,
+      `Submission Timestamp: ${submission_timestamp}`
+    ].filter(Boolean).join('\n');
 
     const clientFullAddress = `${street_address} ${street_address_2}, ${capitalizedCity}, ${state} ${zip_code}`;
 
-    // Step 5: Insert into leads_posted_to_shopify table
+    // Step 4: Insert into leads_posted_to_shopify table
     const { error: insertError } = await supabase
       .from('leads_posted_to_shopify')
       .insert([{
@@ -171,10 +159,10 @@ serve(async (req) => {
         product_title: productTitle,
         product_description: productDescription,
         product_category: industry,
-        product_price: productPrice,
+        product_price: demandStatus === 'High Demand' ? 110 : 90,
         product_type: type_of_service_desired,
         product_vendor: company_name ?? 'Scout',
-        requires_shipping: 'false',  
+        requires_shipping: 'false',
         client_full_name: `${first_name} ${last_name}`,
         client_business_name: business_name ?? '',
         client_email: email,

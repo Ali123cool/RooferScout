@@ -1,4 +1,33 @@
 <script>
+  // Function to handle reCAPTCHA validation manually
+  function validateRecaptchaAndSubmit() {
+    const recaptchaResponse = document.getElementById('g-recaptcha-response').value; // This gets the hidden reCAPTCHA response value
+    console.log('reCAPTCHA response:', recaptchaResponse); // Log the reCAPTCHA response value
+
+    if (!recaptchaResponse || recaptchaResponse.length === 0) {
+      alert('Please complete the reCAPTCHA before submitting.');
+      console.log('reCAPTCHA not completed, stopping submission.');
+      return false; // Halt form submission
+    } else {
+      console.log('reCAPTCHA completed, proceeding with submission.');
+      submitFormToSupabase(); // Call form submission function after reCAPTCHA passes
+    }
+  }
+
+  // Attach the event listener to your custom submit button
+  document.addEventListener('DOMContentLoaded', function () {
+    const submitButton = document.getElementById('Submit-Form-to-Supabase');
+    submitButton.addEventListener('click', function (event) {
+      event.preventDefault(); // Prevent the default form submission behavior
+      console.log('Submit button clicked');
+      validateRecaptchaAndSubmit(); // Validate reCAPTCHA before calling the form submission
+    });
+  });
+</script>
+
+
+
+<script>
   // Function to calculate price and log all the values used in the calculation
   async function calculatePrice() {
     try {
@@ -61,6 +90,7 @@
 
   // Log all form fields and their values, types, and IDs on form submission
   async function submitFormToSupabase() {
+    // If reCAPTCHA check failed, this function will not be called.
     const formData = {
       'first_name': getValueById('First-Name'),
       'last_name': getValueById('Last-Name'),
@@ -141,10 +171,6 @@
       calculatePrice();
     });
 
-    document.getElementById('Submit-Form-to-Supabase').addEventListener('click', (event) => {
-      event.preventDefault();
-      submitFormToSupabase();
-    });
   });
 
   // Helper functions
